@@ -1,0 +1,140 @@
+{{ define "main" }}
+<style>
+    .error-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        text-align: center;
+        padding: 2em;
+    }
+
+    .error-code {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8rem;
+        color: #00ff41;
+        text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41, 0 0 60px rgba(0, 255, 65, 0.5);
+        margin: 0;
+        line-height: 1;
+        animation: glitch 2s infinite;
+    }
+
+    @keyframes glitch {
+        0%, 90%, 100% {
+            transform: translate(0);
+            opacity: 1;
+        }
+        91% {
+            transform: translate(-2px, 1px);
+            opacity: 0.8;
+        }
+        92% {
+            transform: translate(2px, -1px);
+            opacity: 0.9;
+        }
+        93% {
+            transform: translate(-1px, 2px);
+            opacity: 0.8;
+        }
+    }
+
+    .error-title {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1.5rem;
+        color: #00ff41;
+        margin: 1em 0 0.5em;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+    }
+
+    .error-message {
+        color: #00cc33;
+        font-size: 1rem;
+        margin-bottom: 2em;
+        max-width: 400px;
+    }
+
+    .error-terminal {
+        background: rgba(0, 20, 0, 0.8);
+        border: 1px solid #003b00;
+        border-radius: 6px;
+        padding: 1.5em 2em;
+        margin: 1em 0;
+        text-align: left;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+    }
+
+    .error-terminal::before {
+        content: "$ ";
+        color: #00ff41;
+    }
+
+    .error-terminal .cmd {
+        color: #00ff41;
+    }
+
+    .error-terminal .output {
+        color: #ff4141;
+        display: block;
+        margin-top: 0.5em;
+    }
+
+    .error-btn {
+        display: inline-block;
+        padding: 0.8em 2em;
+        background: transparent;
+        border: 1px solid #00ff41;
+        color: #00ff41;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1rem;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.3s ease;
+        margin-top: 1em;
+    }
+
+    .error-btn:hover {
+        background: rgba(0, 255, 65, 0.1);
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .matrix-rain {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: monospace;
+        font-size: 1.2rem;
+        color: #00ff41;
+        opacity: 0.1;
+        white-space: nowrap;
+        animation: rain 10s linear infinite;
+    }
+
+    @keyframes rain {
+        0% {
+            transform: translateX(-50%) translateY(-100%);
+        }
+        100% {
+            transform: translateX(-50%) translateY(100vh);
+        }
+    }
+</style>
+
+<div class="error-container">
+    <h1 class="error-code">404</h1>
+    <h2 class="error-title">Access Denied</h2>
+    <p class="error-message">The page you're looking for has been moved, deleted, or never existed in this matrix.</p>
+
+    <div class="error-terminal">
+        <span class="cmd">find / -name "{{ .RelPermalink }}"</span>
+        <span class="output">Error: No such file or directory</span>
+    </div>
+
+    <a href="{{ .Site.BaseURL }}" class="error-btn">Return to Base</a>
+</div>
+{{ end }}

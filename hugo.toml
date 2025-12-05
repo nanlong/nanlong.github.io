@@ -1,0 +1,100 @@
+baseURL = "https://nanlong.github.io/"
+languageCode = "zh-CN"
+title = "程序员日记"
+theme = "PaperMod"
+
+# 启用 emoji
+enableEmoji = true
+
+# 摘要长度
+summaryLength = 150
+
+[taxonomies]
+tag = "tags"
+series = "series"
+category = "categories"
+
+[params]
+author = "Nanlong"
+description = "记录技术学习和思考"
+defaultTheme = "dark"
+disableThemeToggle = false
+ShowReadingTime = true
+ShowShareButtons = false
+ShowPostNavLinks = true
+nextPrevInSectionOrder = true
+ShowBreadCrumbs = true
+ShowCodeCopyButtons = true
+ShowWordCount = true
+ShowRssButtonInSectionTermList = true
+UseHugoToc = true
+disableSpecial1stPost = true
+disableScrollToTop = false
+hidemeta = false
+hideSummary = false
+showtoc = true
+tocopen = true
+
+[params.homeInfoParams]
+Title = ""
+Content = ""
+
+[[params.socialIcons]]
+name = "github"
+url = "https://github.com/nanlong"
+
+[params.cover]
+hidden = false
+hiddenInList = false
+hiddenInSingle = false
+
+[params.editPost]
+disabled = true
+
+[params.fuseOpts]
+isCaseSensitive = false
+shouldSort = true
+location = 0
+distance = 1000
+threshold = 0.4
+minMatchCharLength = 0
+keys = ["title", "permalink", "summary", "content"]
+
+[[menu.main]]
+name = "文章"
+url = "/posts/"
+weight = 1
+
+[[menu.main]]
+name = "标签"
+url = "/tags/"
+weight = 2
+
+[[menu.main]]
+name = "系列"
+url = "/series/"
+weight = 3
+
+[[menu.main]]
+name = "搜索"
+url = "/search/"
+weight = 4
+
+[outputs]
+home = ["HTML", "RSS", "JSON"]
+
+[markup]
+[markup.highlight]
+style = "dracula"
+lineNos = false
+noClasses = false
+guessSyntax = true
+
+[markup.goldmark.renderer]
+unsafe = true
+
+# 禁用代码块类名猜测，防止 GoAT SVG 转换
+[markup.goldmark.extensions]
+[markup.goldmark.extensions.cjk]
+enable = true
+eastAsianLineBreaks = true

@@ -1,0 +1,255 @@
+<!-- Matrix Background -->
+<canvas id="matrix-bg"></canvas>
+
+<!-- Reading Progress Bar -->
+<div id="reading-progress"></div>
+
+<!-- Vignette Effect -->
+<div id="vignette"></div>
+
+<style>
+    #matrix-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.08;
+    }
+
+    /* Reading Progress Bar */
+    #reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 3px;
+        background: linear-gradient(90deg, #00ff41, #00ff41 50%, #ffffff);
+        box-shadow:
+            0 0 10px #00ff41,
+            0 0 20px #00ff41;
+        z-index: 9999;
+        transition: width 0.1s ease-out;
+    }
+
+    /* Vignette Effect */
+    #vignette {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9998;
+        background: radial-gradient(
+            ellipse at center,
+            transparent 60%,
+            rgba(0, 0, 0, 0.4) 100%
+        );
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // ========== Matrix Rain Animation ==========
+        const canvas = document.getElementById("matrix-bg");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = "01";
+        const charArray = chars.split("");
+        const fontSize = 20;
+        const columns = Math.floor(canvas.width / fontSize / 3);
+
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -50;
+        }
+
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#00ff41";
+            ctx.font = fontSize + "px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const char =
+                    charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize * 3;
+                const y = drops[i] * fontSize;
+
+                if (Math.random() > 0.98) {
+                    ctx.fillStyle = "#ffffff";
+                } else {
+                    ctx.fillStyle = "#00ff41";
+                }
+
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.99) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(draw, 100);
+
+        window.addEventListener("resize", function () {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // ========== Reading Progress Bar ==========
+        const progressBar = document.getElementById("reading-progress");
+        if (progressBar) {
+            window.addEventListener("scroll", function () {
+                const scrollTop = window.scrollY;
+                const docHeight =
+                    document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                progressBar.style.width = progress + "%";
+            });
+        }
+
+        // ========== TOC Current Section Highlight ==========
+        const tocLinks = document.querySelectorAll(".toc a");
+        const headings = document.querySelectorAll(
+            ".post-content h2, .post-content h3",
+        );
+
+        if (tocLinks.length > 0 && headings.length > 0) {
+            window.addEventListener("scroll", function () {
+                let current = "";
+                headings.forEach(function (heading) {
+                    const top = heading.getBoundingClientRect().top;
+                    if (top < 150) {
+                        current = heading.id;
+                    }
+                });
+
+                tocLinks.forEach(function (link) {
+                    link.classList.remove("active");
+                    if (link.getAttribute("href") === "#" + current) {
+                        link.classList.add("active");
+                    }
+                });
+            });
+        }
+
+        // ========== Typewriter Effect for Homepage ==========
+        const homeTitle = document.querySelector(".home-info .entry-content");
+        if (homeTitle) {
+            const messages = [
+                // 欢迎语
+                "欢迎来到我的技术博客，这里记录我的学习与思考",
+                "你好，旅人。欢迎进入代码的世界",
+                "终端已连接，欢迎访问我的数字空间",
+                "Access granted. 欢迎进入系统",
+                // 程序员哲学
+                "代码是诗，Bug 是韵脚",
+                "在 0 和 1 之间，寻找无限可能",
+                "键盘敲击间，构建数字世界",
+                "每一行代码，都是一次思维的冒险",
+                "探索技术的边界，记录成长的足迹",
+                "程序员的浪漫，藏在每一个函数里",
+                "Debug 人生，Commit 成长",
+                "最好的代码是没有代码",
+                "简单是复杂的终极形式",
+                "重构不是目的，优雅才是追求",
+                "算法是灵魂，数据结构是骨架",
+                "Talk is cheap, show me the code",
+                "代码写得好，下班回家早",
+                "今天的 Bug，是明天的 Feature",
+                "程序员的三大美德：懒惰、急躁、傲慢",
+                "我不是在写 Bug，我是在创造就业机会",
+                "没有什么问题是重启解决不了的",
+                "软件开发就是把咖啡转化为代码",
+                "先让它跑起来，再让它跑得好",
+                "过早优化是万恶之源",
+                // 黑客帝国风格
+                "你选择红色药丸，还是蓝色药丸？",
+                "欢迎来到真实的荒漠",
+                "我能看见代码雨中的世界",
+                "The Matrix is everywhere",
+                // 极客幽默
+                "咖啡转化为代码的过程正在进行中...",
+                "// TODO: 写一个改变世界的程序",
+                'git commit -m "又是摸鱼的一天"',
+                "404: 灵感未找到，请稍后重试",
+                "200 OK - 一切正常，继续前进",
+                "Ctrl+C, Ctrl+V, 程序员的基本功",
+                "这不是 Bug，这是 Undocumented Feature",
+                "It works on my machine ¯\\_(ツ)_/¯",
+                // 励志
+                "生命不息，Coding 不止",
+                "学习是最好的投资",
+                "保持好奇，永远年轻",
+                "从 Hello World 到 Hello Universe",
+                "用代码改变世界，一次 Commit 一个脚印",
+                "今天学的，明天就是竞争力",
+                "技术改变命运，代码创造未来",
+                "坚持是最强的天赋",
+                "不积跬步，无以至千行代码",
+            ];
+            const text = messages[Math.floor(Math.random() * messages.length)];
+            homeTitle.textContent = "";
+            homeTitle.style.visibility = "visible";
+            let i = 0;
+            function typeWriter() {
+                if (i < text.length) {
+                    homeTitle.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 50);
+                }
+            }
+            typeWriter();
+        }
+
+        // ========== Add Language Labels to Code Blocks ==========
+        document.querySelectorAll(".highlight").forEach(function (block) {
+            const pre = block.querySelector("pre");
+            if (pre) {
+                const classes = block.className.split(" ");
+                let lang = "";
+                classes.forEach(function (cls) {
+                    if (cls.startsWith("language-")) {
+                        lang = cls.replace("language-", "");
+                    }
+                });
+                if (!lang) {
+                    const codeEl = pre.querySelector("code");
+                    if (codeEl) {
+                        const codeClasses = codeEl.className.split(" ");
+                        codeClasses.forEach(function (cls) {
+                            if (cls.startsWith("language-")) {
+                                lang = cls.replace("language-", "");
+                            }
+                        });
+                    }
+                }
+                if (lang) {
+                    pre.setAttribute("data-lang", lang);
+                }
+            }
+        });
+
+        // ========== External Link Icons ==========
+        document.querySelectorAll(".post-content a").forEach(function (link) {
+            const href = link.getAttribute("href");
+            if (
+                href &&
+                href.startsWith("http") &&
+                !href.includes(window.location.hostname)
+            ) {
+                link.classList.add("external-link");
+                link.setAttribute("target", "_blank");
+                link.setAttribute("rel", "noopener noreferrer");
+            }
+        });
+    });
+</script>

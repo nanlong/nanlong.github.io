@@ -1,0 +1,661 @@
+/* ========== 黑客帝国 Matrix 风格 ========== */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+:root {
+  --matrix-green: #00ff41;
+  --matrix-green-dim: #00cc33;
+  --matrix-green-dark: #003b00;
+  --matrix-bg: #0a0a0a;
+  --matrix-card-bg: rgba(10, 15, 10, 0.85);
+  --matrix-glow: 0 0 10px #00ff41, 0 0 20px #00ff4180;
+
+  --theme: #0a0a0a;
+  --entry: #0a0a0a;
+  --primary: #00ff41;
+  --secondary: #00cc33;
+  --tertiary: #1a1a1a;
+  --content: #00ff41;
+  --code-bg: #000;
+  --border: #003b00;
+}
+
+/* ========== 全局样式 ========== */
+body {
+  background: var(--matrix-bg) !important;
+  color: var(--matrix-green) !important;
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
+}
+
+/* ========== 文章页面容器 - 半透明背景 ========== */
+.main {
+  max-width: 900px;
+}
+
+.post-single {
+  background: var(--matrix-card-bg);
+  border: 1px solid var(--matrix-green-dark);
+  border-radius: 4px;
+  padding: 2.5em;
+  margin: 1em 0;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+/* ========== 导航栏 ========== */
+.nav {
+  background: rgba(5, 5, 5, 0.95) !important;
+  border-bottom: 1px solid var(--matrix-green-dark);
+  backdrop-filter: blur(10px);
+}
+
+.logo a {
+  color: var(--matrix-green) !important;
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace !important;
+  text-shadow: var(--matrix-glow);
+}
+
+.logo a::before {
+  content: "> ";
+  opacity: 0.6;
+}
+
+#menu a {
+  color: var(--matrix-green-dim) !important;
+  transition: all 0.3s;
+}
+
+#menu a:hover,
+#menu a.active {
+  color: var(--matrix-green) !important;
+  text-shadow: var(--matrix-glow);
+}
+
+/* ========== 文章标题 ========== */
+.post-title {
+  color: var(--matrix-green) !important;
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace !important;
+  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  font-size: 1.8rem;
+  line-height: 1.4;
+  margin-bottom: 0.5em;
+}
+
+/* ========== 文章描述 ========== */
+.post-description {
+  color: var(--matrix-green-dim) !important;
+  border-left: 3px solid var(--matrix-green);
+  padding-left: 1em;
+  margin: 1em 0 1.5em 0;
+  font-size: 1.05rem;
+}
+
+/* ========== 文章元信息 ========== */
+.post-meta {
+  color: var(--matrix-green-dark) !important;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* ========== 文章内容 ========== */
+.post-content {
+  color: var(--matrix-green) !important;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.post-content p {
+  margin-bottom: 1.5em;
+}
+
+/* 标题样式 */
+.post-content h2 {
+  color: var(--matrix-green) !important;
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace !important;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+  margin-top: 2.5em;
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--matrix-green-dark);
+  font-size: 1.4rem;
+}
+
+.post-content h3 {
+  color: var(--matrix-green) !important;
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace !important;
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+  font-size: 1.15rem;
+}
+
+/* ========== 代码块 - 现代终端风格 ========== */
+.post-content pre {
+  background: #0c0c0c !important;
+  border: 1px solid #1a3a1a;
+  border-radius: 8px;
+  padding: 0;
+  margin: 1.5em 0;
+  overflow: hidden;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(0, 255, 65, 0.03),
+    inset 0 1px 0 rgba(0, 255, 65, 0.1);
+  /* 确保等宽字符对齐 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 终端标题栏 */
+.post-content pre::before {
+  content: "● ● ●  terminal";
+  display: block;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+  color: var(--matrix-green-dim);
+  padding: 0.6em 1em;
+  font-size: 0.75rem;
+  border-bottom: 1px solid #1a3a1a;
+  letter-spacing: 0.05em;
+}
+
+.post-content pre code {
+  display: block;
+  padding: 1.2em 1.5em;
+  color: var(--matrix-green) !important;
+  /* 中文使用 Noto Sans SC，英文使用等宽字体 */
+  font-family: 'Menlo', 'Monaco', 'Consolas', 'Noto Sans SC', monospace !important;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  tab-size: 4;
+}
+
+/* 语法高亮代码块 */
+.post-content .highlight pre::before {
+  content: "● ● ●  code";
+}
+
+/* 行内代码 */
+.post-content code:not(pre code) {
+  background: rgba(0, 255, 65, 0.08) !important;
+  color: var(--matrix-green) !important;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  border: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+/* ========== 引用块 ========== */
+.post-content blockquote {
+  border-left: 3px solid var(--matrix-green);
+  background: rgba(0, 255, 65, 0.03);
+  padding: 1em 1.5em;
+  margin: 1.5em 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.post-content blockquote p {
+  color: var(--matrix-green-dim);
+  margin-bottom: 0.5em;
+}
+
+.post-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ========== 表格 ========== */
+.post-content table {
+  width: calc(100% - 2px) !important;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  border: 1px solid var(--matrix-green-dark);
+  border-radius: 6px;
+  display: table;
+  table-layout: auto;
+}
+
+.post-content table th,
+.post-content table td {
+  padding: 0.75em 1em;
+  border: 1px solid var(--matrix-green-dark);
+  color: var(--matrix-green);
+}
+
+.post-content table th {
+  background: rgba(0, 255, 65, 0.08);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  letter-spacing: 0.05em;
+}
+
+.post-content table tr:hover td {
+  background: rgba(0, 255, 65, 0.03);
+}
+
+/* ========== 列表 ========== */
+.post-content ul,
+.post-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.post-content li {
+  margin-bottom: 0.5em;
+  line-height: 1.8;
+}
+
+.post-content ul > li::marker {
+  content: "▸ ";
+  color: var(--matrix-green);
+}
+
+/* ========== 链接 ========== */
+.post-content a {
+  color: var(--matrix-green) !important;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(0, 255, 65, 0.4);
+  transition: all 0.2s;
+}
+
+.post-content a:hover {
+  text-shadow: 0 0 8px var(--matrix-green);
+  border-bottom-color: var(--matrix-green);
+}
+
+/* ========== 强调 ========== */
+.post-content strong {
+  color: #00ff00 !important;
+  font-weight: 600;
+}
+
+.post-content em {
+  color: var(--matrix-green-dim);
+}
+
+/* ========== 分隔线 ========== */
+.post-content hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--matrix-green-dark), var(--matrix-green), var(--matrix-green-dark), transparent);
+  margin: 2.5em 0;
+}
+
+/* ========== 目录 ========== */
+.toc {
+  background: rgba(0, 20, 0, 0.5);
+  border: 1px solid var(--matrix-green-dark);
+  border-radius: 6px;
+  padding: 1em 1.5em;
+  margin-bottom: 2em;
+}
+
+.toc a {
+  color: var(--matrix-green-dim) !important;
+  border-bottom: none !important;
+}
+
+.toc a:hover {
+  color: var(--matrix-green) !important;
+}
+
+/* ========== 首页文章卡片 ========== */
+.post-entry {
+  background: var(--matrix-card-bg);
+  border: 1px solid var(--matrix-green-dark);
+  border-radius: 6px;
+  margin-bottom: 1em;
+  transition: all 0.3s;
+  backdrop-filter: blur(5px);
+}
+
+.post-entry:hover {
+  border-color: var(--matrix-green-dim);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+  transform: translateY(-2px);
+}
+
+.post-entry .entry-header h2 {
+  color: var(--matrix-green) !important;
+}
+
+.post-entry .entry-content {
+  color: var(--matrix-green-dim);
+}
+
+/* ========== 页脚 ========== */
+.footer {
+  color: var(--matrix-green-dark);
+  border-top: 1px solid var(--matrix-green-dark);
+}
+
+/* ========== 面包屑 ========== */
+.breadcrumbs a {
+  color: var(--matrix-green-dim) !important;
+}
+
+/* ========== 标签 ========== */
+.post-tags a {
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid var(--matrix-green-dark);
+  color: var(--matrix-green-dim) !important;
+  border-radius: 3px;
+}
+
+.post-tags a:hover {
+  border-color: var(--matrix-green);
+  color: var(--matrix-green) !important;
+}
+
+/* ========== 上下篇导航 ========== */
+.paginav {
+  border-color: var(--matrix-green-dark);
+  margin-top: 2em;
+}
+
+.paginav a {
+  color: var(--matrix-green-dim) !important;
+}
+
+.paginav a:hover {
+  color: var(--matrix-green) !important;
+}
+
+/* ========== 搜索框 ========== */
+#searchbox input {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border: 1px solid var(--matrix-green-dark) !important;
+  color: var(--matrix-green) !important;
+  border-radius: 4px;
+}
+
+#searchbox input:focus {
+  border-color: var(--matrix-green) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+}
+
+/* ========== 滚动条 ========== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--matrix-green-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--matrix-green-dim);
+}
+
+/* ========== 选中文字 ========== */
+::selection {
+  background: var(--matrix-green);
+  color: #000;
+}
+
+/* ========== 主题切换 ========== */
+#theme-toggle {
+  color: var(--matrix-green-dim);
+}
+
+/* ========== 图片样式 ========== */
+.post-content img {
+  border: 1px solid var(--matrix-green-dark);
+  border-radius: 6px;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+  transition: all 0.3s ease;
+  max-width: 100%;
+}
+
+.post-content img:hover {
+  border-color: var(--matrix-green);
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+  transform: scale(1.02);
+}
+
+/* ========== TOC 当前章节高亮 ========== */
+.toc a.active {
+  color: var(--matrix-green) !important;
+  text-shadow: 0 0 8px var(--matrix-green);
+  font-weight: 600;
+}
+
+.toc a {
+  transition: all 0.2s ease;
+}
+
+/* ========== 首页卡片增强动画 ========== */
+.post-entry {
+  position: relative;
+  overflow: hidden;
+}
+
+.post-entry::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 65, 0.05),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.post-entry:hover::before {
+  left: 100%;
+}
+
+.post-entry:hover .entry-header h2 {
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+/* ========== 首页信息打字机光标 ========== */
+.home-info .entry-content::after {
+  content: "_";
+  animation: blink 1s infinite;
+  color: var(--matrix-green);
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ========== 代码块语言标签 ========== */
+.post-content .highlight pre[data-lang]::before {
+  content: "● ● ●  " attr(data-lang);
+}
+
+/* ========== 返回顶部按钮 ========== */
+#top-link {
+  background: rgba(0, 20, 0, 0.9) !important;
+  border: 1px solid var(--matrix-green-dark) !important;
+  color: var(--matrix-green) !important;
+  transition: all 0.3s ease;
+}
+
+#top-link:hover {
+  border-color: var(--matrix-green) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
+  transform: translateY(-3px);
+}
+
+#top-link svg {
+  stroke: var(--matrix-green);
+}
+
+/* ========== 首页标题样式 ========== */
+.home-info .entry-header h1 {
+  color: var(--matrix-green) !important;
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace !important;
+  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+}
+
+/* ========== 系列/分类页面 ========== */
+.terms-tags a {
+  background: rgba(0, 255, 65, 0.05) !important;
+  border: 1px solid var(--matrix-green-dark) !important;
+  color: var(--matrix-green-dim) !important;
+  transition: all 0.3s ease;
+}
+
+.terms-tags a:hover {
+  border-color: var(--matrix-green) !important;
+  color: var(--matrix-green) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+/* ========== 上下篇导航增强 ========== */
+.paginav {
+  background: var(--matrix-card-bg);
+  border-radius: 6px;
+  padding: 1em;
+}
+
+.paginav a {
+  transition: all 0.3s ease;
+}
+
+.paginav a:hover {
+  text-shadow: 0 0 8px var(--matrix-green);
+}
+
+.paginav .title {
+  color: var(--matrix-green-dark);
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ========== 代码复制按钮 ========== */
+.copy-code {
+  background: rgba(0, 255, 65, 0.1) !important;
+  border: 1px solid var(--matrix-green-dark) !important;
+  color: var(--matrix-green) !important;
+  transition: all 0.3s ease;
+}
+
+.copy-code:hover {
+  background: rgba(0, 255, 65, 0.2) !important;
+  border-color: var(--matrix-green) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+}
+
+/* ========== 外部链接图标 ========== */
+.post-content a.external-link::after {
+  content: " ↗";
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.post-content a.external-link:hover::after {
+  opacity: 1;
+}
+
+/* ========== 标签云动画 ========== */
+.terms-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8em;
+}
+
+.terms-tags a {
+  padding: 0.5em 1em !important;
+  font-size: 0.9em;
+  position: relative;
+  overflow: hidden;
+}
+
+.terms-tags a::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(0, 255, 65, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.terms-tags a:hover::before {
+  width: 200%;
+  height: 200%;
+}
+
+/* ========== 呼吸发光文字 ========== */
+.post-title {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(0, 255, 65, 0.6), 0 0 30px rgba(0, 255, 65, 0.4);
+  }
+}
+
+/* Logo 呼吸效果 */
+.logo a {
+  animation: logoBreathe 4s ease-in-out infinite;
+}
+
+@keyframes logoBreathe {
+  0%, 100% {
+    text-shadow: 0 0 10px #00ff41, 0 0 20px rgba(0, 255, 65, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 15px #00ff41, 0 0 30px rgba(0, 255, 65, 0.8), 0 0 40px rgba(0, 255, 65, 0.4);
+  }
+}
+
+/* ========== 扫描线效果（可选，增加复古感） ========== */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9997;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  opacity: 0.3;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .post-single {
+    padding: 1.5em;
+    margin: 0.5em;
+  }
+
+  .post-title {
+    font-size: 1.4rem;
+  }
+
+  .post-content pre code {
+    font-size: 0.8rem;
+    padding: 1em;
+  }
+}
