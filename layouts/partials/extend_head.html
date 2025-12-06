@@ -542,7 +542,7 @@
             }
 
             function getTypeDelay() {
-                return 80 + Math.random() * 70;
+                return 25 + Math.random() * 25;
             }
 
             function processAction() {
@@ -575,7 +575,7 @@
                                 }
                                 render();
                                 i += 4;
-                                setTimeout(typeNext, 200 + Math.random() * 150);
+                                setTimeout(typeNext, 60 + Math.random() * 40);
                                 return;
                             }
 
@@ -603,7 +603,7 @@
                             render();
                             i++;
                             let delay = getTypeDelay();
-                            if (char === "\n") delay = 200 + Math.random() * 150;
+                            if (char === "\n") delay = 60 + Math.random() * 40;
                             setTimeout(typeNext, delay);
                         } else {
                             setTimeout(processAction, 30);
