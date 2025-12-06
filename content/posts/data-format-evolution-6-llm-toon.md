@@ -137,7 +137,7 @@ TOON 的核心思想是：**用声明式的结构头，替代重复的字段名*
 ```
 
 **TOON 格式**（13 tokens）：
-```
+```toon
 users[2]{id,name}:
  1,Alice
  2,Bob
@@ -153,7 +153,7 @@ users[2]{id,name}:
 ### 数组的表示
 
 **原始数组**：
-```
+```toon
 tags[3]: python,rust,go
 ```
 
@@ -172,7 +172,7 @@ tags[3]: python,rust,go
 ```
 
 **TOON**：
-```
+```toon
 users[2]{id,name,active}:
  1,Alice,true
  2,Bob,false
@@ -200,7 +200,7 @@ users[2]{id,name,active}:
 
 ### 基本类型
 
-```
+```toon
 # 字符串（简单值不需要引号）
 name: Alice
 
@@ -220,7 +220,7 @@ data: null
 
 ### 对象
 
-```
+```toon
 user:
  name: Alice
  age: 30
@@ -234,19 +234,19 @@ user:
 ### 数组语法详解
 
 **1. 原始值数组**：
-```
+```toon
 colors[3]: red,green,blue
 ```
 
 **2. 对象数组（表格形式）**：
-```
+```toon
 items[2]{id,name,price}:
  1,Apple,1.50
  2,Banana,0.75
 ```
 
 **3. 列表项形式**（用于非统一结构）：
-```
+```toon
 mixed[3]:
  - simple value
  - key: value
@@ -255,7 +255,7 @@ mixed[3]:
 
 ### 混合结构示例
 
-```
+```toon
 order:
  id: 12345
  customer:
@@ -319,7 +319,7 @@ TOON 的出现揭示了一个有趣的趋势：
 
 现在的数据格式需要同时考虑三方：
 
-```
+```text
         人类可读
            ▲
           /|\
@@ -404,7 +404,7 @@ TOON 可能只是开始。未来可能出现：
 
 ### 决策框架
 
-```
+```text
 你的数据要做什么？
 │
 ├── 人类编写和阅读 → YAML / TOML
