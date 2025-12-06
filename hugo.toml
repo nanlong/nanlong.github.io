@@ -3,6 +3,9 @@ languageCode = "zh-CN"
 title = "程序员日记"
 theme = "PaperMod"
 
+# 构建未来日期的文章
+buildFuture = true
+
 # 启用 emoji
 enableEmoji = true
 
@@ -39,9 +42,11 @@ tocopen = true
 Title = ""
 Content = ""
 
+# GitHub 图标已移至导航栏
 [[params.socialIcons]]
 name = "github"
 url = "https://github.com/nanlong"
+showInNav = true
 
 [params.cover]
 hidden = false

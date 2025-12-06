@@ -48,6 +48,128 @@
             rgba(0, 0, 0, 0.4) 100%
         );
     }
+
+    /* Code Editor Styles */
+    .code-editor {
+        background: #1e1e1e;
+        border-radius: 8px;
+        overflow: hidden;
+        font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        box-shadow: 0 8px 32px rgba(0, 255, 65, 0.15);
+        border: 1px solid #333;
+        width: 100%;
+        height: 320px;
+        margin: 0 auto;
+    }
+
+    .editor-header {
+        background: #323232;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #333;
+        height: 36px;
+        box-sizing: border-box;
+    }
+
+    .editor-dots {
+        display: flex;
+        gap: 6px;
+    }
+
+    .editor-dots .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .editor-dots .dot.red { background: #ff5f56; }
+    .editor-dots .dot.yellow { background: #ffbd2e; }
+    .editor-dots .dot.green { background: #27ca40; }
+
+    .editor-title {
+        color: #888;
+        font-size: 12px;
+        flex: 1;
+        text-align: center;
+    }
+
+    .editor-body {
+        display: flex;
+        height: calc(100% - 36px);
+        overflow: hidden;
+    }
+
+    .line-numbers {
+        background: #1e1e1e;
+        color: #858585;
+        text-align: right;
+        padding: 12px 8px;
+        border-right: 1px solid #333;
+        user-select: none;
+        white-space: pre;
+        min-width: 32px;
+    }
+
+    .code-area {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .code-content {
+        padding: 12px 16px;
+        white-space: pre;
+        color: #d4d4d4;
+    }
+
+    /* Syntax Highlighting - Dracula Theme */
+    .code-editor .kw { color: #ff79c6; }
+    .code-editor .ty { color: #8be9fd; }
+    .code-editor .fn { color: #50fa7b; }
+    .code-editor .mc { color: #50fa7b; }
+    .code-editor .st { color: #f1fa8c; }
+    .code-editor .at { color: #ffb86c; }
+    .code-editor .cm { color: #6272a4; }
+    .code-editor .num { color: #bd93f9; }
+
+    /* Cursor */
+    .code-editor .cursor {
+        display: inline-block;
+        width: 2px;
+        height: 1.2em;
+        background: #00ff41;
+        margin-left: 1px;
+        vertical-align: text-bottom;
+        animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        50.01%, 100% { opacity: 0; }
+    }
+
+    /* GitHub 导航栏图标 */
+    #menu li:has(.nav-github) {
+        display: flex;
+        align-items: center;
+    }
+
+    .nav-github {
+        display: flex;
+        align-items: center;
+        height: 100%;
+    }
+
+    .nav-github svg {
+        transition: color 0.2s ease;
+        vertical-align: middle;
+    }
+
+    .nav-github:hover svg {
+        color: #00ff41;
+    }
 </style>
 
 <script>
@@ -141,73 +263,370 @@
             });
         }
 
-        // ========== Typewriter Effect for Homepage ==========
-        const homeTitle = document.querySelector(".home-info .entry-content");
-        if (homeTitle) {
-            const messages = [
-                // 欢迎语
-                "欢迎来到我的技术博客，这里记录我的学习与思考",
-                "你好，旅人。欢迎进入代码的世界",
-                "终端已连接，欢迎访问我的数字空间",
-                "Access granted. 欢迎进入系统",
-                // 程序员哲学
-                "代码是诗，Bug 是韵脚",
-                "在 0 和 1 之间，寻找无限可能",
-                "键盘敲击间，构建数字世界",
-                "每一行代码，都是一次思维的冒险",
-                "探索技术的边界，记录成长的足迹",
-                "程序员的浪漫，藏在每一个函数里",
-                "Debug 人生，Commit 成长",
-                "最好的代码是没有代码",
-                "简单是复杂的终极形式",
-                "重构不是目的，优雅才是追求",
-                "算法是灵魂，数据结构是骨架",
-                "Talk is cheap, show me the code",
-                "代码写得好，下班回家早",
-                "今天的 Bug，是明天的 Feature",
-                "程序员的三大美德：懒惰、急躁、傲慢",
-                "我不是在写 Bug，我是在创造就业机会",
-                "没有什么问题是重启解决不了的",
-                "软件开发就是把咖啡转化为代码",
-                "先让它跑起来，再让它跑得好",
-                "过早优化是万恶之源",
-                // 黑客帝国风格
-                "你选择红色药丸，还是蓝色药丸？",
-                "欢迎来到真实的荒漠",
-                "我能看见代码雨中的世界",
-                "The Matrix is everywhere",
-                // 极客幽默
-                "咖啡转化为代码的过程正在进行中...",
-                "// TODO: 写一个改变世界的程序",
-                'git commit -m "又是摸鱼的一天"',
-                "404: 灵感未找到，请稍后重试",
-                "200 OK - 一切正常，继续前进",
-                "Ctrl+C, Ctrl+V, 程序员的基本功",
-                "这不是 Bug，这是 Undocumented Feature",
-                "It works on my machine ¯\\_(ツ)_/¯",
-                // 励志
-                "生命不息，Coding 不止",
-                "学习是最好的投资",
-                "保持好奇，永远年轻",
-                "从 Hello World 到 Hello Universe",
-                "用代码改变世界，一次 Commit 一个脚印",
-                "今天学的，明天就是竞争力",
-                "技术改变命运，代码创造未来",
-                "坚持是最强的天赋",
-                "不积跬步，无以至千行代码",
+        // ========== Code Editor Effect for Homepage ==========
+        const homeInfo = document.querySelector(".home-info .entry-content");
+        if (homeInfo) {
+            homeInfo.style.display = "none";
+            const editorContainer = document.createElement("div");
+            editorContainer.className = "code-editor";
+            homeInfo.parentNode.insertBefore(editorContainer, homeInfo);
+
+            editorContainer.innerHTML = `
+                <div class="editor-header">
+                    <div class="editor-dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="editor-title">main.rs — 程序员日记</div>
+                </div>
+                <div class="editor-body">
+                    <div class="line-numbers"></div>
+                    <div class="code-area">
+                        <div class="code-content"></div>
+                    </div>
+                </div>
+            `;
+
+            const lineNumbers = editorContainer.querySelector(".line-numbers");
+            const codeContent = editorContainer.querySelector(".code-content");
+            const maxVisibleLines = 13;
+
+            // 编码动作序列：模拟真实编程习惯
+            // t=type, p=pause, d=dedent(减少缩进)
+            const actions = [
+                // use 语句
+                {t: "use anyhow::{Context, Result};\n"},
+                {t: "use serde::{Deserialize, Serialize};\n"},
+                {t: "use std::collections::HashMap;\n"},
+                {t: "use tokio::time::{sleep, Duration};\n"}, {p: 100},
+                {t: "\n"},
+
+                // 常量
+                {t: "const VERSION: &str = \"0.1.0\";\n"}, {p: 80},
+                {t: "\n"},
+
+                // Post 结构体
+                {t: "/// 博客文章\n"},
+                {t: "#[derive(Debug, Clone, Serialize, Deserialize)]\n"},
+                {t: "pub struct Post {\n"},
+                {t: "id: u64,\n"},
+                {t: "title: String,\n"},
+                {t: "content: String,\n"},
+                {t: "tags: Vec<String>,\n"},
+                {t: "published: bool,\n"},
+                {d: 1}, {t: "}\n"}, {p: 100},
+                {t: "\n"},
+
+                // Blog 结构体
+                {t: "/// 程序员日记 - 技术博客系统\n"},
+                {t: "#[derive(Debug, Clone)]\n"},
+                {t: "pub struct Blog {\n"},
+                {t: "name: String,\n"},
+                {t: "author: String,\n"},
+                {t: "posts: HashMap<u64, Post>,\n"},
+                {t: "next_id: u64,\n"},
+                {d: 1}, {t: "}\n"}, {p: 100},
+                {t: "\n"},
+
+                // impl Blog
+                {t: "impl Blog {\n"},
+
+                // new 函数
+                {t: "/// 创建新的博客实例\n"},
+                {t: "pub fn new(name: &str, author: &str) -> Self {\n"},
+                {t: "Self {\n"},
+                {t: "name: name.to_string(),\n"},
+                {t: "author: author.to_string(),\n"},
+                {t: "posts: HashMap::new(),\n"},
+                {t: "next_id: 1,\n"},
+                {d: 1}, {t: "}\n"},
+                {d: 1}, {t: "}\n"}, {p: 80},
+                {t: "\n"},
+
+                // add_post 函数
+                {t: "/// 添加新文章\n"},
+                {t: "pub fn add_post(&mut self, title: &str, content: &str) -> u64 {\n"},
+                {t: "let id = self.next_id;\n"},
+                {t: "let post = Post {\n"},
+                {t: "id,\n"},
+                {t: "title: title.to_string(),\n"},
+                {t: "content: content.to_string(),\n"},
+                {t: "tags: vec![],\n"},
+                {t: "published: false,\n"},
+                {d: 1}, {t: "};\n"},
+                {t: "self.posts.insert(id, post);\n"},
+                {t: "self.next_id += 1;\n"},
+                {t: "id\n"},
+                {d: 1}, {t: "}\n"}, {p: 80},
+                {t: "\n"},
+
+                // publish 函数
+                {t: "/// 发布文章\n"},
+                {t: "pub fn publish(&mut self, id: u64) -> Result<()> {\n"},
+                {t: "let post = self.posts.get_mut(&id)\n"},
+                {t: "    .context(\"Post not found\")?;\n"},
+                {t: "post.published = true;\n"},
+                {t: "Ok(())\n"},
+                {d: 1}, {t: "}\n"}, {p: 80},
+                {t: "\n"},
+
+                // run 函数
+                {t: "/// 运行博客服务\n"},
+                {t: "pub async fn run(&self) -> Result<()> {\n"},
+                {t: 'println!("🚀 {} v{}", self.name, VERSION);\n'},
+                {t: 'println!("👤 Author: {}", self.author);\n'},
+                {t: 'println!("📝 Posts: {}", self.posts.len());\n'},
+                {t: "\n"},
+                {t: "loop {\n"},
+                {t: "self.think().await;\n"},
+                {t: "self.code().await;\n"},
+                {t: "self.write().await;\n"},
+                {t: "self.learn().await;\n"},
+                {t: "sleep(Duration::from_secs(1)).await;\n"},
+                {d: 1}, {t: "}\n"},
+                {d: 1}, {t: "}\n"}, {p: 80},
+                {t: "\n"},
+
+                // 私有方法
+                {t: "async fn think(&self) {\n"},
+                {t: 'println!("💭 Thinking...");\n'},
+                {d: 1}, {t: "}\n"},
+                {t: "\n"},
+
+                {t: "async fn code(&self) {\n"},
+                {t: 'println!("⌨️  Coding...");\n'},
+                {d: 1}, {t: "}\n"},
+                {t: "\n"},
+
+                {t: "async fn write(&self) {\n"},
+                {t: 'println!("✍️  Writing...");\n'},
+                {d: 1}, {t: "}\n"},
+                {t: "\n"},
+
+                {t: "async fn learn(&self) {\n"},
+                {t: 'println!("📚 Learning...");\n'},
+                {d: 1}, {t: "}\n"},
+
+                {d: 1}, {t: "}\n"}, {p: 120},
+                {t: "\n"},
+
+                // main 函数
+                {t: "#[tokio::main]\n"},
+                {t: "async fn main() -> Result<()> {\n"},
+                {t: 'let mut blog = Blog::new("程序员日记", "Zhangsan");\n'},
+                {t: "\n"},
+                {t: "// 添加文章\n"},
+                {t: 'let id = blog.add_post(\n'},
+                {t: '    "Rust 异步编程入门",\n'},
+                {t: '    "本文介绍 async/await 的基本用法...",\n'},
+                {t: ");\n"},
+                {t: "blog.publish(id)?;\n"},
+                {t: "\n"},
+                {t: "// 启动服务\n"},
+                {t: "blog.run().await\n"},
+                {d: 1}, {t: "}\n"}, {p: 200},
             ];
-            const text = messages[Math.floor(Math.random() * messages.length)];
-            homeTitle.textContent = "";
-            homeTitle.style.visibility = "visible";
-            let i = 0;
-            function typeWriter() {
-                if (i < text.length) {
-                    homeTitle.textContent += text.charAt(i);
-                    i++;
-                    setTimeout(typeWriter, 50);
+
+            let lines = [""];
+            let cursorLine = 0;
+            let cursorCol = 0;
+            let actionIndex = 0;
+
+            function escapeHtml(str) {
+                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
+            function highlightLine(line) {
+                const escaped = escapeHtml(line);
+                const trimmed = escaped.trim();
+
+                // 注释行
+                if (trimmed.startsWith("///") || trimmed.startsWith("//")) {
+                    return '<span class="cm">' + escaped + '</span>';
+                }
+
+                // 属性宏行
+                if (trimmed.startsWith("#[")) {
+                    return escaped.replace(/(#\[[^\]]+\])/, '<span class="at">$1</span>');
+                }
+
+                // 普通代码行
+                let r = escaped;
+                // 字符串
+                r = r.replace(/"([^"]*)"/g, '<span class="st">"$1"</span>');
+                // 关键字
+                r = r.replace(/\b(use|pub|struct|impl|fn|let|mut|async|await|loop|Self|self|for|in|if|else|match|return|mod|crate|super|where|trait|type|const|static|move|ref|dyn)\b/g, '<span class="kw">$1</span>');
+                // 类型
+                r = r.replace(/\b(String|Vec|Result|Option|Duration|Post|Blog|Ok|Err|Some|None)\b/g, '<span class="ty">$1</span>');
+                // 宏
+                r = r.replace(/\b(println|vec|format|panic|assert|debug|tokio)!/g, '<span class="mc">$1!</span>');
+                // 数字
+                r = r.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+                return r;
+            }
+
+            function render() {
+                const totalLines = lines.length;
+                // 从第一行开始显示，当超出时才滚动
+                const startLine = Math.max(0, cursorLine - maxVisibleLines + 1);
+                const endLine = Math.min(totalLines, startLine + maxVisibleLines);
+                const visibleLines = lines.slice(startLine, endLine);
+
+                let lineNums = "";
+                for (let i = startLine; i < endLine; i++) {
+                    lineNums += (i + 1) + "\n";
+                }
+                lineNumbers.textContent = lineNums;
+
+                // 渲染代码，在光标位置插入光标
+                let html = "";
+                for (let i = 0; i < visibleLines.length; i++) {
+                    const actualLine = startLine + i;
+                    let lineContent = visibleLines[i];
+
+                    if (actualLine === cursorLine) {
+                        // 在光标位置插入光标
+                        const before = lineContent.substring(0, cursorCol);
+                        const after = lineContent.substring(cursorCol);
+                        html += highlightLine(before) + '<span class="cursor"></span>' + highlightLine(after);
+                    } else {
+                        html += highlightLine(lineContent);
+                    }
+                    if (i < visibleLines.length - 1) html += "\n";
+                }
+                codeContent.innerHTML = html;
+            }
+
+            function insertChar(char) {
+                if (char === "\n") {
+                    const currentLine = lines[cursorLine];
+                    const before = currentLine.substring(0, cursorCol);
+                    const after = currentLine.substring(cursorCol);
+
+                    // 计算当前行的缩进
+                    const indentMatch = before.match(/^(\s*)/);
+                    const currentIndent = indentMatch ? indentMatch[1] : "";
+
+                    // 如果行尾是 {，增加一级缩进
+                    const trimmedBefore = before.trimEnd();
+                    let newIndent = currentIndent;
+                    if (trimmedBefore.endsWith("{")) {
+                        newIndent = currentIndent + "    ";
+                    }
+
+                    lines[cursorLine] = before;
+                    lines.splice(cursorLine + 1, 0, newIndent + after);
+                    cursorLine++;
+                    cursorCol = newIndent.length;
+                } else {
+                    const currentLine = lines[cursorLine];
+                    lines[cursorLine] = currentLine.substring(0, cursorCol) + char + currentLine.substring(cursorCol);
+                    cursorCol++;
                 }
             }
-            typeWriter();
+
+            function backspace() {
+                if (cursorCol > 0) {
+                    const currentLine = lines[cursorLine];
+                    lines[cursorLine] = currentLine.substring(0, cursorCol - 1) + currentLine.substring(cursorCol);
+                    cursorCol--;
+                } else if (cursorLine > 0) {
+                    const currentLine = lines[cursorLine];
+                    const prevLine = lines[cursorLine - 1];
+                    cursorCol = prevLine.length;
+                    lines[cursorLine - 1] = prevLine + currentLine;
+                    lines.splice(cursorLine, 1);
+                    cursorLine--;
+                }
+            }
+
+            function getTypeDelay() {
+                return 80 + Math.random() * 70;
+            }
+
+            function processAction() {
+                if (actionIndex >= actions.length) {
+                    setTimeout(() => {
+                        lines = [""];
+                        cursorLine = 0;
+                        cursorCol = 0;
+                        actionIndex = 0;
+                        render();
+                        setTimeout(processAction, 800);
+                    }, 2500);
+                    return;
+                }
+
+                const action = actions[actionIndex];
+                actionIndex++;
+
+                if (action.t !== undefined) {
+                    // 打字
+                    const text = action.t;
+                    let i = 0;
+                    function typeNext() {
+                        if (i < text.length) {
+                            // 检测行首缩进（4个空格 = 1个Tab）
+                            if (text.substr(i, 4) === "    " && cursorCol % 4 === 0) {
+                                // 一次插入4个空格，模拟Tab
+                                for (let j = 0; j < 4; j++) {
+                                    insertChar(" ");
+                                }
+                                render();
+                                i += 4;
+                                setTimeout(typeNext, 200 + Math.random() * 150);
+                                return;
+                            }
+
+                            const char = text[i];
+
+                            // 偶尔打错
+                            if (Math.random() < 0.02 && /[a-z]/i.test(char)) {
+                                const wrong = String.fromCharCode(char.charCodeAt(0) + (Math.random() > 0.5 ? 1 : -1));
+                                insertChar(wrong);
+                                render();
+                                setTimeout(() => {
+                                    backspace();
+                                    render();
+                                    setTimeout(() => {
+                                        insertChar(char);
+                                        render();
+                                        i++;
+                                        setTimeout(typeNext, getTypeDelay());
+                                    }, 60);
+                                }, 100);
+                                return;
+                            }
+
+                            insertChar(char);
+                            render();
+                            i++;
+                            let delay = getTypeDelay();
+                            if (char === "\n") delay = 200 + Math.random() * 150;
+                            setTimeout(typeNext, delay);
+                        } else {
+                            setTimeout(processAction, 30);
+                        }
+                    }
+                    typeNext();
+                } else if (action.d !== undefined) {
+                    // 减少缩进（删除行首的4个空格）
+                    const currentLine = lines[cursorLine];
+                    if (currentLine.startsWith("    ")) {
+                        lines[cursorLine] = currentLine.substring(4);
+                        cursorCol = Math.max(0, cursorCol - 4);
+                    }
+                    render();
+                    setTimeout(processAction, 150 + Math.random() * 100);
+                } else if (action.p !== undefined) {
+                    // 暂停思考
+                    setTimeout(processAction, action.p + Math.random() * 100);
+                }
+            }
+
+            render();
+            setTimeout(processAction, 600);
         }
 
         // ========== Add Language Labels to Code Blocks ==========

@@ -1,0 +1,11 @@
+{{- with site.Params.homeInfoParams }}
+<article class="first-entry home-info">
+    <header class="entry-header">
+        <h1>{{ .Title | markdownify }}</h1>
+    </header>
+    <div class="entry-content">
+        {{ .Content | markdownify }}
+    </div>
+    {{- /* 社交图标已移至导航栏，此处不再显示 */ -}}
+</article>
+{{- end -}}

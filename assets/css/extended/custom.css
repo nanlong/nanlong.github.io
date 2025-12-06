@@ -284,20 +284,70 @@ body {
 
 /* ========== 目录 ========== */
 .toc {
-  background: rgba(0, 20, 0, 0.5);
+  background: rgba(0, 20, 0, 0.4);
   border: 1px solid var(--matrix-green-dark);
-  border-radius: 6px;
+  border-left: 3px solid var(--matrix-green);
+  border-radius: 0 6px 6px 0;
   padding: 1em 1.5em;
   margin-bottom: 2em;
 }
 
-.toc a {
-  color: var(--matrix-green-dim) !important;
-  border-bottom: none !important;
+.toc details summary {
+  color: var(--matrix-green);
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: 0.3em 0;
 }
 
-.toc a:hover {
+.toc details summary .details {
+  margin-left: 0.3em;
+}
+
+.toc .inner {
+  margin-top: 0.8em;
+  font-size: 0.9em;
+}
+
+.toc .inner ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.toc .inner ul ul {
+  padding-left: 1.2em;
+  margin-top: 0.3em;
+  border-left: 1px solid var(--matrix-green-dark);
+}
+
+.toc .inner li {
+  margin-bottom: 0.4em;
+  line-height: 1.5;
+}
+
+.toc .inner a {
+  color: var(--matrix-green-dim) !important;
+  border-bottom: none !important;
+  display: inline-block;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.toc .inner a:hover {
   color: var(--matrix-green) !important;
+  background: rgba(0, 255, 65, 0.08);
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+}
+
+/* TOC 当前章节高亮 */
+.toc a.active {
+  color: var(--matrix-green) !important;
+  background: rgba(0, 255, 65, 0.1);
+  font-weight: 500;
 }
 
 /* ========== 首页文章卡片 ========== */
