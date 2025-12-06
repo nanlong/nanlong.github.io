@@ -33,7 +33,7 @@ series: ["数据格式演进史"]
 
 核心思想：**把一切都看作「资源」，用 HTTP 动词操作资源。**
 
-```
+```http
 GET    /users/123      # 获取用户
 POST   /users          # 创建用户
 PUT    /users/123      # 更新用户
@@ -71,7 +71,7 @@ DELETE /users/123      # 删除用户
 
 假设你要显示用户卡片，只需要 `name` 和 `avatar`：
 
-```
+```http
 GET /users/123
 ```
 
@@ -106,7 +106,7 @@ GET /users/123
 
 **REST 方式**：
 
-```
+```text
 1. GET /users/123                    # 获取用户
 2. GET /users/123/posts              # 获取帖子列表
 3. GET /posts/456/comments/count     # 获取帖子1的评论数
@@ -123,7 +123,7 @@ GET /users/123
 
 你的 API 需要迭代。新版本加了字段，老版本要保持兼容：
 
-```
+```text
 /api/v1/users/123
 /api/v2/users/123
 /api/v3/users/123
@@ -154,7 +154,7 @@ Swagger/OpenAPI 文档要和代码同步更新。
 
 用 REST 实现：
 
-```
+```text
 GET /me/feed
 GET /posts/1/author
 GET /posts/1/likes?limit=3
@@ -308,7 +308,7 @@ query EvilQuery {
 
 REST 可以直接用 HTTP 缓存：
 
-```
+```http
 GET /users/123
 Cache-Control: max-age=3600
 ```
@@ -340,7 +340,7 @@ GraphQL 是 JSON over HTTP，不直接支持文件上传。
 
 当你有几十上百个微服务时：
 
-```
+```text
 用户服务 ←→ 订单服务 ←→ 支付服务 ←→ 库存服务 ←→ ...
 ```
 
@@ -423,7 +423,7 @@ service UserService {
 
 现实中，很多公司同时使用多种范式：
 
-```
+```text
                     ┌─────────────┐
                     │   浏览器     │
                     └──────┬──────┘
@@ -449,7 +449,7 @@ service UserService {
 
 ### 决策树
 
-```
+```text
 你在构建什么？
 │
 ├── 公开 API（第三方使用）
@@ -510,7 +510,7 @@ GraphQL 作为 BFF（Backend for Frontend），对接多个 gRPC 微服务。
 
 **API 范式演进**：
 
-```
+```text
 SOAP/XML（复杂、严谨）
     ↓ 需要更简单
 REST/JSON（简单、通用）

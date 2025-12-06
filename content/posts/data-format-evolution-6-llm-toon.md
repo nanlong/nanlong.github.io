@@ -40,7 +40,7 @@ Token 是 LLM 处理文本的基本单位。大致可以理解为：
 - 中文：约 1-2 个字符 = 1 个 Token
 - 代码/标点：每个符号可能是独立的 Token
 
-```
+```text
 "Hello, World!" → ["Hello", ",", " World", "!"] → 4 Tokens
 ```
 

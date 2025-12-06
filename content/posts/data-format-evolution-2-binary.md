@@ -120,7 +120,7 @@ message User {
 ```
 
 **Protobuf**（约 30 字节）：
-```
+```text
 08 B9 60 12 05 41 6C 69 63 65 1A 11 61 6C 69 63 65 40 65 78 61 6D 70 6C 65 2E 63 6F 6D 20 1E
 ```
 
@@ -205,7 +205,7 @@ Protobuf 解决了「数据怎么编码」，但没解决「数据怎么传输�
 
 传统 REST API 的问题：
 
-```
+```http
 POST /api/users/create
 Content-Type: application/json
 
@@ -328,7 +328,7 @@ CBOR 的优势：
 
 二进制格式有一个明显的缺点：**不可读**。
 
-```
+```text
 08 B9 60 12 05 41 6C 69 63 65 1A 11 61 6C 69 63 65 40 65 78
 ```
 
