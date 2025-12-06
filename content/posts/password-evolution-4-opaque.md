@@ -28,12 +28,13 @@ series: ["密码安全进化史"]
 
 攻击者获得 salt 和 v 后，可以离线暴力破解：
 
-```
+```python
 for password in wordlist:
     x = H(salt, password)
-    v' = g^x mod N
-    if v' == v:
-        print("Found:", password)  # 破解成功！
+    v_guess = pow(g, x, N)
+    if v_guess == v:
+        print("Found:", password)
+        break
 ```
 
 不需要服务器参与，攻击者可以在自己的机器上无限尝试。虽然离散对数难题增加了计算成本，但这仍是"离线"攻击！
@@ -90,13 +91,11 @@ OPAQUE（2018年提出，2023年成为IETF标准草案）的目标更加激进�
 
 **小偷想暴力破解：**
 
-```
-for 配方 in 所有可能的配方:
-    材料 = 神秘化(配方)
-    加工后 = ??? ← 需要锁匠的手法！
-```
+1. 遍历所有可能的配方
+2. 把配方"神秘化"
+3. 加工？→ **需要锁匠的手法！无法继续！**
 
-无法继续！每次尝试都必须请锁匠帮忙加工，但锁匠会记录尝试次数，超过限制就锁定账户！
+每次尝试都必须请锁匠帮忙加工，但锁匠会记录尝试次数，超过限制就锁定账户！
 
 **对比**：
 
@@ -236,22 +235,22 @@ OPRF（Oblivious Pseudo-Random Function，不经意伪随机函数）是 OPAQUE 
 
 **攻击者想暴力破解**：
 
-```
+```python
 for password in wordlist:
-    blind = H(password)^r
-    response = ??? ← 需要服务器的 oprf_key 计算！
+    blind = pow(H(password), r, N)
+    response = ???  # Need server's oprf_key!
     rwd = unblind(response)
-    if decrypt(rwd, envelope) works:
+    if decrypt(rwd, envelope):
         print("Found!")
 ```
 
-卡在第 3 步：无法独立计算 OPRF 结果！
+卡在第 3 步：**无法独立计算 OPRF 结果，需要服务器的 `oprf_key`！**
 
 **攻击者的唯一选择**：假装正常用户，向服务器发起登录请求
 
-```
+```python
 for password in wordlist:
-    response = server.login(username, blind)  ← 在线请求
+    response = server.login(username, blind)  # online request
     if login_success:
         print("Found!")
 ```
@@ -338,28 +337,19 @@ OPRF 基于椭圆曲线密码学：
 
 **协议流程**：
 
-```
-客户端：
-  r  ← 随机标量
-  M  = H(password)         // 密码映射到曲线点
-  M' = r × M               // 盲化 (标量乘法)
+**客户端**：
+1. 生成随机标量 `r`
+2. 密码映射到曲线点：`M = H(password)`
+3. 盲化（标量乘法）：`M' = r × M`
+4. 发送 `M'` 给服务器
 
-发送 M' 给服务器
+**服务器**：
+1. 用私钥计算：`Z = k × M' = k × (r × M) = r × (k × M)`
+2. 返回 `Z` 给客户端
 
-服务器：
-  Z  = k × M'              // 用私钥计算
-     = k × (r × M)
-     = r × (k × M)         // 标量乘法可交换
-
-返回 Z 给客户端
-
-客户端：
-  N  = (1/r) × Z           // 去盲化
-     = (1/r) × r × (k × M)
-     = k × M               // r 被消掉了！
-
-输出：H'(password, N)       // 最终的 OPRF 输出
-```
+**客户端**：
+1. 去盲化：`N = (1/r) × Z = (1/r) × r × (k × M) = k × M`（r 被消掉了！）
+2. 输出：`H'(password, N)` 作为最终的 OPRF 输出
 
 **安全性保证**：
 - 服务器只看到 M' = r×M，r 是随机的，所以 M' 泄露不了 M

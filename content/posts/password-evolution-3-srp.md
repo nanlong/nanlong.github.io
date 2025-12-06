@@ -181,11 +181,13 @@ SRP（Secure Remote Password，安全远程密码）是 1998 年由斯坦福大�
 
 由于 `v = g^x mod N`，可以离线暴力猜测密码：
 
-```
+```python
 for pwd in wordlist:
-    x' = H(salt, pwd)
-    v' = g^x' mod N
-    if v' == v: 破解成功
+    x_guess = H(salt, pwd)
+    v_guess = pow(g, x_guess, N)
+    if v_guess == v:
+        # found!
+        break
 ```
 
 但计算 `g^x mod N` 比普通哈希慢。
