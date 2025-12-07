@@ -58,7 +58,9 @@ impl OrderService {
 
 **问题**：业务规则散落在 Service 里，`Order` 只是一个数据容器。
 
-这就是 Eric Evans 所说的「贫血领域模型」（Anemic Domain Model）——虽然用了类和对象，但 Model 只是数据容器，业务逻辑全在 Service 里，**失去了 OOP 封装数据和行为的核心优势**。
+这就是 Martin Fowler 所批评的「贫血领域模型」（Anemic Domain Model）——虽然用了类和对象，但 Model 只是数据容器，业务逻辑全在 Service 里，**失去了 OOP 封装数据和行为的核心优势**。
+
+*注：「贫血领域模型」这一术语由 Martin Fowler 在 2003 年提出并批评，Eric Evans 在《领域驱动设计》中描述了类似问题但用了不同术语。*
 
 ## DDD 是什么？
 

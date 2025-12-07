@@ -25,7 +25,7 @@ series: ["架构演进史"]
 
 ## 分布式系统的八个谬误
 
-1994 年，Sun Microsystems 的工程师 Peter Deutsch 总结了「分布式计算的八个谬误」。30 年后，这些谬误依然在收割新手。
+1994 年，Sun Microsystems 的工程师们总结了「分布式计算的八个谬误」（最初由 Peter Deutsch 提出前七条，James Gosling 后来补充了第八条）。30 年后，这些谬误依然在收割新手。
 
 ### 谬误 1：网络是可靠的
 
