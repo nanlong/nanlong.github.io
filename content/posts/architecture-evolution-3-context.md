@@ -47,15 +47,15 @@ Phoenix 项目的目录结构：
 
 ```text
 lib/my_app/
-├── accounts/           # 「账户」上下文
-│   ├── user.ex
-│   └── accounts.ex
-├── catalog/            # 「商品目录」上下文
-│   ├── product.ex
-│   └── catalog.ex
-└── orders/             # 「订单」上下文
-    ├── order.ex
-    └── orders.ex
+├── accounts.ex         # 「账户」Context 模块
+├── accounts/           # 「账户」相关的 Schema
+│   └── user.ex
+├── catalog.ex          # 「商品目录」Context 模块
+├── catalog/
+│   └── product.ex
+├── orders.ex           # 「订单」Context 模块
+└── orders/
+    └── order.ex
 ```
 
 **看出区别了吗？**
@@ -102,15 +102,19 @@ defmodule MyApp.Accounts do
   alias MyApp.Accounts.User
   alias MyApp.Repo
 
-  # ===== 公开 API =====
+  # ===== 查询 =====
 
   def list_users do
     Repo.all(User)
   end
 
-  def get_user!(id) do
-    Repo.get!(User, id)
-  end
+  def get_user!(id), do: Repo.get!(User, id)
+
+  def get_user(id), do: Repo.get(User, id)
+
+  def get_user_by_email(email), do: Repo.get_by(User, email: email)
+
+  # ===== 变更 =====
 
   def create_user(attrs \\ %{}) do
     %User{}
@@ -118,32 +122,30 @@ defmodule MyApp.Accounts do
     |> Repo.insert()
   end
 
-  def authenticate_user(email, password) do
-    user = Repo.get_by(User, email: email)
-
-    cond do
-      user && verify_password(password, user.password_hash) ->
-        {:ok, user}
-      user ->
-        {:error, :invalid_password}
-      true ->
-        {:error, :user_not_found}
-    end
+  def update_user(%User{} = user, attrs) do
+    user
+    |> User.changeset(attrs)
+    |> Repo.update()
   end
 
-  # ===== 私有函数 =====
+  def delete_user(%User{} = user) do
+    Repo.delete(user)
+  end
 
-  defp verify_password(password, hash) do
-    Bcrypt.verify_pass(password, hash)
+  # ===== Changeset（用于表单） =====
+
+  def change_user(%User{} = user, attrs \\ %{}) do
+    User.changeset(user, attrs)
   end
 end
 ```
 
 **关键点**：
 
-1. **公开 API 是业务语言**：`create_user`、`authenticate_user`，不是技术语言
-2. **实现细节被隐藏**：外部不知道用了 Bcrypt，不知道用了什么数据库
+1. **公开 API 是业务语言**：`list_users`、`create_user`、`get_user_by_email`，不是技术语言
+2. **实现细节被隐藏**：外部不知道用了什么数据库，不知道内部如何查询
 3. **边界清晰**：所有用户相关的操作都在这里，不散落到其他地方
+4. **change_user 用于表单**：返回 changeset 供前端表单绑定和验证
 
 ## Controller 变薄了
 
@@ -157,7 +159,12 @@ defmodule MyAppWeb.UserController do
 
   def index(conn, _params) do
     users = Accounts.list_users()
-    render(conn, "index.html", users: users)
+    render(conn, :index, users: users)
+  end
+
+  def new(conn, _params) do
+    changeset = Accounts.change_user(%Accounts.User{})
+    render(conn, :new, changeset: changeset)
   end
 
   def create(conn, %{"user" => user_params}) do
@@ -165,21 +172,27 @@ defmodule MyAppWeb.UserController do
       {:ok, user} ->
         conn
         |> put_flash(:info, "用户创建成功")
-        |> redirect(to: Routes.user_path(conn, :show, user))
+        |> redirect(to: ~p"/users/#{user}")
 
-      {:error, changeset} ->
-        render(conn, "new.html", changeset: changeset)
+      {:error, %Ecto.Changeset{} = changeset} ->
+        render(conn, :new, changeset: changeset)
     end
   end
 end
 ```
 
-Controller 现在只做三件事：
-1. 接收 HTTP 请求
+Controller 现在只做四件事：
+1. 接收 HTTP 请求参数
 2. 调用 Context 的业务方法
-3. 返回 HTTP 响应
+3. 处理成功/失败分支
+4. 返回 HTTP 响应（渲染或重定向）
 
 **不再有业务逻辑。** 业务逻辑全在 Context 里。
+
+注意几个 Phoenix 的惯例：
+- `render(conn, :index, ...)` 使用原子而非字符串指定模板
+- `~p"/users/#{user}"` 是 Phoenix 1.7+ 的路由 sigil，编译时验证路径
+- `change_user/1` 返回空 changeset 供 `new` 动作的表单使用
 
 ## Context 的核心价值
 
@@ -190,7 +203,7 @@ Controller 现在只做三件事：
 - 不用翻遍整个项目
 
 当新人入职，他可以问：「这个项目有哪些业务领域？」
-答案就是：看 `lib/my_app/` 下有哪些文件夹。
+答案就是：看 `lib/my_app/` 下有哪些 Context 模块（如 `accounts.ex`、`orders.ex`）。
 
 ### 价值 2：依赖方向可控
 
@@ -217,21 +230,29 @@ defmodule MyApp.AccountsTest do
 
   alias MyApp.Accounts
 
-  describe "create_user/1" do
-    test "有效参数创建用户成功" do
-      attrs = %{name: "Alice", email: "alice@example.com", password: "secret123"}
-      assert {:ok, user} = Accounts.create_user(attrs)
-      assert user.name == "Alice"
+  describe "users" do
+    @valid_attrs %{name: "Alice", email: "alice@example.com"}
+    @invalid_attrs %{name: nil, email: nil}
+
+    test "list_users/0 returns all users" do
+      {:ok, user} = Accounts.create_user(@valid_attrs)
+      assert Accounts.list_users() == [user]
     end
 
-    test "无效邮箱返回错误" do
-      attrs = %{name: "Bob", email: "invalid", password: "secret123"}
-      assert {:error, changeset} = Accounts.create_user(attrs)
-      assert "邮箱格式不正确" in errors_on(changeset).email
+    test "create_user/1 with valid data creates a user" do
+      assert {:ok, %Accounts.User{} = user} = Accounts.create_user(@valid_attrs)
+      assert user.name == "Alice"
+      assert user.email == "alice@example.com"
+    end
+
+    test "create_user/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
     end
   end
 end
 ```
+
+注意 `use MyApp.DataCase`——这是 Phoenix 生成的测试辅助模块，会自动处理数据库沙箱隔离。
 
 **测试的是业务逻辑，不是 HTTP 路由。**
 
@@ -242,67 +263,81 @@ end
 - 检查商品库存（Catalog）
 - 创建订单（Orders）
 
-Phoenix 的建议是：**让 Controller 协调，或者创建一个 Facade**。
+Phoenix 官方文档明确说明：**Context 之间可以互相调用，这是被鼓励的做法**。关键是通过公开 API 调用，而不是直接访问对方的内部实现。
 
-### 方案 1：Controller 协调
+### 方案 1：在 Orders Context 中调用其他 Context
+
+```elixir
+defmodule MyApp.Orders do
+  alias MyApp.{Accounts, Catalog}
+  alias MyApp.Orders.Order
+
+  def create_order(attrs) do
+    # 调用其他 Context 的公开 API
+    with {:ok, user} <- fetch_user(attrs.user_id),
+         {:ok, product} <- fetch_product(attrs.product_id),
+         :ok <- check_stock(product, attrs.quantity) do
+      %Order{}
+      |> Order.changeset(%{
+        user_id: user.id,
+        product_id: product.id,
+        quantity: attrs.quantity,
+        total: calculate_total(product, attrs.quantity)
+      })
+      |> Repo.insert()
+    end
+  end
+
+  defp fetch_user(user_id) do
+    case Accounts.get_user(user_id) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
+    end
+  end
+
+  defp fetch_product(product_id) do
+    case Catalog.get_product(product_id) do
+      nil -> {:error, :product_not_found}
+      product -> {:ok, product}
+    end
+  end
+
+  defp check_stock(product, quantity) do
+    if Catalog.in_stock?(product, quantity),
+      do: :ok,
+      else: {:error, :out_of_stock}
+  end
+
+  defp calculate_total(product, quantity) do
+    Decimal.mult(product.price, quantity)
+  end
+end
+```
+
+这是官方推荐的方式。Orders Context 通过公开 API 调用 Accounts 和 Catalog。
+
+### 方案 2：Controller 简单协调
+
+如果跨 Context 的逻辑很简单，Controller 也可以直接协调：
 
 ```elixir
 def create(conn, %{"order" => order_params}) do
   user = Accounts.get_user!(order_params["user_id"])
   product = Catalog.get_product!(order_params["product_id"])
 
-  if Catalog.in_stock?(product, order_params["quantity"]) do
-    {:ok, order} = Orders.create_order(user, product, order_params)
-    # ...
-  else
-    # ...
+  case Orders.create_order(user, product, order_params) do
+    {:ok, order} ->
+      conn
+      |> put_flash(:info, "订单创建成功")
+      |> redirect(to: ~p"/orders/#{order}")
+
+    {:error, %Ecto.Changeset{} = changeset} ->
+      render(conn, :new, changeset: changeset)
   end
 end
 ```
 
-简单场景可以这样做。
-
-### 方案 2：创建一个业务流程模块
-
-复杂场景，创建一个专门的模块：
-
-```elixir
-defmodule MyApp.Checkout do
-  @moduledoc """
-  结账流程。协调多个 Context 完成下单。
-  """
-
-  alias MyApp.{Accounts, Catalog, Orders}
-
-  def place_order(user_id, product_id, quantity) do
-    with {:ok, user} <- get_active_user(user_id),
-         {:ok, product} <- get_available_product(product_id, quantity),
-         {:ok, order} <- Orders.create_order(user, product, quantity),
-         :ok <- Catalog.decrease_stock(product, quantity) do
-      {:ok, order}
-    end
-  end
-
-  defp get_active_user(user_id) do
-    case Accounts.get_user(user_id) do
-      nil -> {:error, :user_not_found}
-      user -> if user.active, do: {:ok, user}, else: {:error, :user_inactive}
-    end
-  end
-
-  defp get_available_product(product_id, quantity) do
-    case Catalog.get_product(product_id) do
-      nil -> {:error, :product_not_found}
-      product -> if Catalog.in_stock?(product, quantity), do: {:ok, product}, else: {:error, :out_of_stock}
-    end
-  end
-end
-```
-
-这个模块：
-- 不属于任何一个 Context
-- 协调多个 Context 完成业务流程
-- 是一个「用例」或「应用服务」
+**关键原则**：无论哪种方式，Context 之间只通过公开函数通信，不直接访问对方的 Schema 或 Repo。
 
 ## 从 Context 到 DDD
 
@@ -402,16 +437,16 @@ web/
 
 ```text
 lib/my_app/
+├── accounts.ex          # Context 入口
 ├── accounts/
-│   ├── accounts.ex      # Context 入口
 │   ├── user.ex          # Schema
 │   └── credential.ex    # Schema
-├── orders/
-│   ├── orders.ex
-│   └── order.ex
+├── orders.ex
+└── orders/
+    └── order.ex
 lib/my_app_web/
 ├── controllers/
-└── views/
+└── components/
 ```
 
 **改变**：
@@ -438,12 +473,12 @@ DDD 更推荐方案 2，每个 Context 有自己的视角。但 Phoenix 实践�
 
 ### Q：Context 之间可以调用吗？
 
-**A：可以，但要控制方向。**
+**A：可以，这是被鼓励的做法。**
 
-原则：
-- **单向依赖**：A 可以调用 B，但 B 不能反过来调用 A
-- **通过公开 API**：不访问对方的内部实现
-- **考虑异步**：复杂场景用事件/消息代替直接调用
+Phoenix 官方文档明确支持 Context 之间的调用，关键是：
+- **通过公开 API**：不直接访问对方的 Schema 或 Repo
+- **避免循环依赖**：如果 A 调用 B，B 就不应该调用 A
+- **复杂场景考虑异步**：用事件/消息解耦
 
 ### Q：Context 怎么测试？
 
@@ -452,15 +487,24 @@ DDD 更推荐方案 2，每个 Context 有自己的视角。但 Phoenix 实践�
 ```elixir
 # 单元测试：测试单个 Context
 defmodule MyApp.AccountsTest do
+  use MyApp.DataCase
+  alias MyApp.Accounts
   # ...
 end
 
 # 集成测试：测试跨 Context 流程
-defmodule MyApp.CheckoutTest do
-  test "完整下单流程" do
-    user = create_user()
-    product = create_product()
-    assert {:ok, order} = Checkout.place_order(user.id, product.id, 1)
+defmodule MyApp.OrdersTest do
+  use MyApp.DataCase
+
+  test "创建订单需要有效用户和商品" do
+    {:ok, user} = Accounts.create_user(%{name: "Alice", email: "a@b.com"})
+    {:ok, product} = Catalog.create_product(%{name: "Book", price: 29.99})
+
+    assert {:ok, order} = Orders.create_order(%{
+      user_id: user.id,
+      product_id: product.id,
+      quantity: 1
+    })
   end
 end
 ```
