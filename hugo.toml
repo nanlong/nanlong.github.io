@@ -19,6 +19,7 @@ category = "categories"
 
 [params]
 author = "Nanlong"
+comments = true
 description = "记录技术学习和思考"
 defaultTheme = "dark"
 disableThemeToggle = false
