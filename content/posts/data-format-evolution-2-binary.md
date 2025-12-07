@@ -83,7 +83,7 @@ JSON 解析器需要：
 
 ## Google 的答案：Protocol Buffers
 
-2008 年，Google 开源了 **Protocol Buffers**（简称 Protobuf）。实际上，它在 Google 内部已经使用了近 10 年。
+2008 年，Google 开源了 **Protocol Buffers**（简称 Protobuf）。实际上，它在 Google 内部已经使用了约 7 年。
 
 ### 核心思想：用 Schema 换效率
 

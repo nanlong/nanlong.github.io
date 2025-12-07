@@ -62,7 +62,7 @@ DELETE /users/123      # 删除用户
 - Stripe API
 - 几乎所有 SaaS 产品
 
-**如果你在 2010 年代设计 API，REST 是唯一合理的选择。**
+**2010 年代，REST 成为 Web API 设计的主流选择。**
 
 ## REST 的裂痕
 
