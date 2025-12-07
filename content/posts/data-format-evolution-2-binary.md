@@ -465,6 +465,7 @@ CBOR 的优势：
 1. *[从 XML 到 JSON，复杂之死](/posts/data-format-evolution-1-xml-to-json/)*
 2. *二进制觉醒：当 JSON 不够快（本篇）*
 3. *[零拷贝：当序列化本身也嫌慢](/posts/data-format-evolution-3-zero-copy/)*
-4. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-4-config/)*
-5. *[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-5-api-paradigm/)*
-6. *[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-6-llm-toon/)*
+4. *[列式革命：当数据以亿行计](/posts/data-format-evolution-4-columnar/)*
+5. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-5-config/)*
+6. *[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-6-api-paradigm/)*
+7. *[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-7-llm-toon/)*

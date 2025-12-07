@@ -1,5 +1,5 @@
 ---
-title: "数据格式演进史（六）：LLM 时代，TOON 与格式的未来"
+title: "数据格式演进史（七）：LLM 时代，TOON 与格式的未来"
 date: 2025-12-07T15:00:00+08:00
 draft: false
 tags: ["数据格式", "TOON", "LLM", "AI", "Token", "未来"]
@@ -22,6 +22,7 @@ series: ["数据格式演进史"]
 | 2000s | 需要简单 | JSON |
 | 2010s | 需要高效 | Protobuf |
 | 2010s | 需要极致 | FlatBuffers |
+| 2010s | 需要分析 | Parquet/Arrow |
 | 2020s | 需要灵活 | GraphQL |
 
 每一次演进都由**新的约束条件**驱动。
@@ -437,15 +438,16 @@ TOON 可能只是开始。未来可能出现：
 
 ---
 
-*上一篇：[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-5-api-paradigm/)*
+*上一篇：[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-6-api-paradigm/)*
 
 *本系列：*
 1. *[从 XML 到 JSON，复杂之死](/posts/data-format-evolution-1-xml-to-json/)*
 2. *[二进制觉醒：当 JSON 不够快](/posts/data-format-evolution-2-binary/)*
 3. *[零拷贝：当序列化本身也嫌慢](/posts/data-format-evolution-3-zero-copy/)*
-4. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-4-config/)*
-5. *[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-5-api-paradigm/)*
-6. *LLM 时代：TOON 与格式的未来（本篇）*
+4. *[列式革命：当数据以亿行计](/posts/data-format-evolution-4-columnar/)*
+5. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-5-config/)*
+6. *[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-6-api-paradigm/)*
+7. *LLM 时代：TOON 与格式的未来（本篇）*
 
 *延伸阅读：*
 - *[TOON 官方规范](https://github.com/toon-format/spec)*

@@ -414,20 +414,21 @@ FlatBuffers/Cap'n Proto（零拷贝，极快）
 
 ---
 
-到目前为止，我们讨论的都是「传输格式」——程序之间交换数据用的。但程序还需要「配置文件」——人类编写、程序读取的格式。
+到目前为止，我们讨论的都是「传输格式」——数据在网络上传输时的优化。但还有另一个维度的优化：当你的数据以**亿行**计，只查询其中几列时，按行存储的格式会浪费 99% 的 I/O。
 
-下一篇，我们来看一条平行的演进线：**配置文件的演进，从 INI 到 YAML 到 TOML**。
+下一篇，我们来看**列式存储**：Parquet 和 Arrow 如何改变大数据分析。
 
 ---
 
 *上一篇：[二进制觉醒：当 JSON 不够快](/posts/data-format-evolution-2-binary/)*
 
-*下一篇：[配置文件简史：从混沌到秩序](/posts/data-format-evolution-4-config/)*
+*下一篇：[列式革命：当数据以亿行计](/posts/data-format-evolution-4-columnar/)*
 
 *本系列：*
 1. *[从 XML 到 JSON，复杂之死](/posts/data-format-evolution-1-xml-to-json/)*
 2. *[二进制觉醒：当 JSON 不够快](/posts/data-format-evolution-2-binary/)*
 3. *零拷贝：当序列化本身也嫌慢（本篇）*
-4. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-4-config/)*
-5. *[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-5-api-paradigm/)*
-6. *[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-6-llm-toon/)*
+4. *[列式革命：当数据以亿行计](/posts/data-format-evolution-4-columnar/)*
+5. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-5-config/)*
+6. *[API 范式之争：REST、GraphQL、gRPC](/posts/data-format-evolution-6-api-paradigm/)*
+7. *[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-7-llm-toon/)*

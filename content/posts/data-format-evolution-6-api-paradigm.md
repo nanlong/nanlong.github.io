@@ -1,5 +1,5 @@
 ---
-title: "数据格式演进史（五）：API 范式之争，REST、GraphQL、gRPC"
+title: "数据格式演进史（六）：API 范式之争，REST、GraphQL、gRPC"
 date: 2025-12-07T14:00:00+08:00
 draft: false
 tags: ["API", "REST", "GraphQL", "gRPC", "微服务", "架构"]
@@ -547,14 +547,15 @@ gRPC（高效、流式）—— 专注微服务
 
 ---
 
-*上一篇：[配置文件简史：从混沌到秩序](/posts/data-format-evolution-4-config/)*
+*上一篇：[配置文件简史：从混沌到秩序](/posts/data-format-evolution-5-config/)*
 
-*下一篇：[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-6-llm-toon/)*
+*下一篇：[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-7-llm-toon/)*
 
 *本系列：*
 1. *[从 XML 到 JSON，复杂之死](/posts/data-format-evolution-1-xml-to-json/)*
 2. *[二进制觉醒：当 JSON 不够快](/posts/data-format-evolution-2-binary/)*
 3. *[零拷贝：当序列化本身也嫌慢](/posts/data-format-evolution-3-zero-copy/)*
-4. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-4-config/)*
-5. *API 范式之争：REST、GraphQL、gRPC（本篇）*
-6. *[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-6-llm-toon/)*
+4. *[列式革命：当数据以亿行计](/posts/data-format-evolution-4-columnar/)*
+5. *[配置文件简史：从混沌到秩序](/posts/data-format-evolution-5-config/)*
+6. *API 范式之争：REST、GraphQL、gRPC（本篇）*
+7. *[LLM 时代：TOON 与格式的未来](/posts/data-format-evolution-7-llm-toon/)*
