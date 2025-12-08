@@ -149,7 +149,7 @@ if acquired:
 
 **为什么要 lock_value？** 防止删除别人的锁：
 
-```
+```text
 时间线：
   T1: A 获取锁（过期时间 5s）
   T2: A 执行任务（耗时 6s）
@@ -180,7 +180,7 @@ redis.eval(UNLOCK_SCRIPT, keys=["job:daily_report"], args=[lock_value])
 
 如果 Redis 是单点，挂了锁就失效。Redlock 算法用多个 Redis 实例：
 
-```
+```text
 Redlock 流程：
   1. 获取当前时间 T1
   2. 依次向 N 个 Redis 实例请求锁（相同的 key 和 value）
@@ -197,7 +197,7 @@ Redlock 流程：
 
 **问题**：订单服务调用库存服务和支付服务，怎么保证一致？
 
-```
+```text
 用户下单：
   1. 订单服务：创建订单
   2. 库存服务：扣减库存
@@ -482,7 +482,7 @@ def update_user(user_id, data):
 
 **⚠️ 仍有极端情况**：
 
-```
+```text
 T1: 线程 A 查询缓存 miss
 T2: 线程 A 从数据库读取旧值 V1
 T3: 线程 B 更新数据库为 V2
@@ -580,7 +580,7 @@ def handle_payment_success(order_id):
 
 ## 选型决策树
 
-```
+```text
                     ┌─────────────────────┐
                     │   一致性要求高吗？   │
                     └──────────┬──────────┘

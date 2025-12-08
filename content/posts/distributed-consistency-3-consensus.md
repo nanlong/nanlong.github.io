@@ -28,7 +28,7 @@ Paxos 是分布式共识的开山之作，但它难懂到作者自己都承认�
 
 假设你们组 5 个人要选中午吃什么：
 
-```
+```text
 投票情况：
   小明：川菜
   小红：川菜
@@ -89,7 +89,7 @@ Paxos 有三种角色：
 
 **两阶段流程**：
 
-```
+```text
 阶段 1：Prepare（准备）
 
 Proposer                    Acceptor 1,2,3
@@ -144,7 +144,7 @@ Raft 把共识问题拆成三个独立的子问题：
 
 ### Raft 的三种角色
 
-```
+```text
                ┌─────────────┐
                │   Leader    │  只有一个，负责处理所有写请求
                └─────────────┘
@@ -162,7 +162,7 @@ Raft 把共识问题拆成三个独立的子问题：
 
 **正常情况**：
 
-```
+```text
 Leader                  Follower A,B,C
    │                         │
    │── 心跳 ─────────────────►│
@@ -175,7 +175,7 @@ Leader                  Follower A,B,C
 
 **Leader 挂了**：
 
-```
+```text
 Leader (挂了)            Follower A,B,C
    X                         │
                              │  Follower A: 好久没收到心跳了
@@ -209,7 +209,7 @@ Candidate A              Follower B,C
 
 选出 Leader 后，客户端的写请求这样处理：
 
-```
+```text
 客户端          Leader           Follower A,B
    │               │                 │
    │── 写入 x=1 ──►│                 │
@@ -238,7 +238,7 @@ Candidate A              Follower B,C
 
 **Raft 的保证**：只有包含所有已提交日志的节点，才能成为新 Leader。
 
-```
+```text
 场景：Leader 提交了日志 [1,2,3]，然后挂了
 
 节点 A: [1,2,3]  ← 日志完整
@@ -279,7 +279,7 @@ Candidate A              Follower B,C
 
 5 节点集群，处理一次写请求：
 
-```
+```text
 初始状态：
   节点 1 (Leader, 任期 5)
   节点 2,3,4,5 (Follower)
@@ -315,7 +315,7 @@ Candidate A              Follower B,C
 
 **Raft 的解决方案**：
 
-```
+```text
 网络分区前：
   节点 1 (Leader, 任期 5)
   节点 2,3,4,5 (Follower)
@@ -337,7 +337,7 @@ Candidate A              Follower B,C
 
 **但节点 1 无法提交任何日志**：
 
-```
+```text
 节点 1 (旧 Leader)        节点 2
    │                       │
    │── 写 x=1 ────────────►│
@@ -349,7 +349,7 @@ Candidate A              Follower B,C
 
 **网络恢复后**：
 
-```
+```text
 节点 1 收到任期 6 的消息
   │
   │  任期 6 > 我的任期 5
