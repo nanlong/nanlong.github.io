@@ -1036,16 +1036,18 @@ fn main() {
 
 ---
 
-> **系列导航**
->
-> - 第一篇：Rust 让设计模式返璞归真
-> - 第二篇：配置系统——从硬编码到热加载
-> - 第三篇：插件架构——让系统长出翅膀
-> - 第四篇：数据管道——像乐高一样组装逻辑
-> - 第五篇：状态流转——订单不只是 CRUD
-> - 第六篇：事件驱动——模块间的优雅对话
-> - 第七篇：外部集成——与第三方和平共处
-> - **第八篇：框架设计——把控制权还给用户**（本文）
-> - 第九篇：树形世界——递归结构的驯服术
-> - 第十篇：规则引擎——让业务人员写代码
-> - 第十一篇：终篇——反模式与断舍离
+*上一篇：[外部集成——与第三方和平共处](/posts/design-pattern-not-routine-7-integration/)*
+*下一篇：[树形世界——递归结构的驯服术](/posts/design-pattern-not-routine-9-tree/)*
+
+*本系列：*
+1. *[Rust 让设计模式返璞归真](/posts/design-pattern-not-routine-1-intro/)*
+2. *[配置系统——从硬编码到热加载](/posts/design-pattern-not-routine-2-config/)*
+3. *[插件架构——让系统长出翅膀](/posts/design-pattern-not-routine-3-plugin/)*
+4. *[数据管道——像乐高一样组装逻辑](/posts/design-pattern-not-routine-4-pipeline/)*
+5. *[状态流转——订单不只是 CRUD](/posts/design-pattern-not-routine-5-state/)*
+6. *[事件驱动——模块间的优雅对话](/posts/design-pattern-not-routine-6-event/)*
+7. *[外部集成——与第三方和平共处](/posts/design-pattern-not-routine-7-integration/)*
+8. *框架设计——把控制权还给用户（本篇）*
+9. *[树形世界——递归结构的驯服术](/posts/design-pattern-not-routine-9-tree/)*
+10. *[规则引擎——让业务人员写代码](/posts/design-pattern-not-routine-10-rule-engine/)*
+11. *[终篇——反模式与断舍离](/posts/design-pattern-not-routine-11-antipattern/)*

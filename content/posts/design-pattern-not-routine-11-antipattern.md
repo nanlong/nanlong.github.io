@@ -640,19 +640,22 @@ data.push(1);
 
 软件设计的终极目标是**管理复杂性**。如果你的设计模式增加了复杂性而不是降低了它，那就是时候断舍离了。
 
-## 系列回顾
+---
 
-1. [开篇：Rust 让设计模式返璞归真](@/posts/design-pattern-not-routine-1-intro.md)
-2. [配置系统：从硬编码到热加载](@/posts/design-pattern-not-routine-2-config.md) — 单例、建造者、原型
-3. [插件架构：让系统长出翅膀](@/posts/design-pattern-not-routine-3-plugin.md) — 工厂、抽象工厂、桥接
-4. [数据管道：像乐高一样组装逻辑](@/posts/design-pattern-not-routine-4-pipeline.md) — 装饰器、责任链、策略
-5. [状态流转：订单不只是 CRUD](@/posts/design-pattern-not-routine-5-state.md) — 状态、命令、备忘录
-6. [事件驱动：模块间的优雅对话](@/posts/design-pattern-not-routine-6-event.md) — 观察者、中介者
-7. [外部集成：与第三方和平共处](@/posts/design-pattern-not-routine-7-integration.md) — 适配器、外观、代理
-8. [框架设计：把控制权还给用户](@/posts/design-pattern-not-routine-8-framework.md) — 模板方法、钩子
-9. [树形世界：递归结构的驯服术](@/posts/design-pattern-not-routine-9-tree.md) — 组合、访问者、迭代器、享元
-10. [规则引擎：让业务人员写代码](@/posts/design-pattern-not-routine-10-rule-engine.md) — 解释器
-11. [终篇：反模式与断舍离](@/posts/design-pattern-not-routine-11-antipattern.md) — 本文
+*上一篇：[规则引擎——让业务人员写代码](/posts/design-pattern-not-routine-10-rule-engine/)*
+
+*本系列：*
+1. *[Rust 让设计模式返璞归真](/posts/design-pattern-not-routine-1-intro/)*
+2. *[配置系统——从硬编码到热加载](/posts/design-pattern-not-routine-2-config/)*
+3. *[插件架构——让系统长出翅膀](/posts/design-pattern-not-routine-3-plugin/)*
+4. *[数据管道——像乐高一样组装逻辑](/posts/design-pattern-not-routine-4-pipeline/)*
+5. *[状态流转——订单不只是 CRUD](/posts/design-pattern-not-routine-5-state/)*
+6. *[事件驱动——模块间的优雅对话](/posts/design-pattern-not-routine-6-event/)*
+7. *[外部集成——与第三方和平共处](/posts/design-pattern-not-routine-7-integration/)*
+8. *[框架设计——把控制权还给用户](/posts/design-pattern-not-routine-8-framework/)*
+9. *[树形世界——递归结构的驯服术](/posts/design-pattern-not-routine-9-tree/)*
+10. *[规则引擎——让业务人员写代码](/posts/design-pattern-not-routine-10-rule-engine/)*
+11. *终篇——反模式与断舍离（本篇）*
 
 ---
 
