@@ -462,7 +462,7 @@ fn calculate_area(shape: &Shape) -> f64 {
 
 ### 何时引入模式
 
-```
+```text
 引入模式的正确时机：
 
                     复杂度
@@ -536,7 +536,7 @@ impl Facade {
 
 **从简单开始，按需演进**：
 
-```
+```text
 第一阶段：直接实现
 fn calculate_tax(amount: f64) -> f64 {
     amount * 0.1  // 10% 税率
