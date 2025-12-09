@@ -9,6 +9,10 @@ resources/_gen/
 .DS_Store
 Thumbs.db
 
+# AI 相关缓存文件
+.claude
+.serena
+
 # 编辑器
 .idea/
 .vscode/
