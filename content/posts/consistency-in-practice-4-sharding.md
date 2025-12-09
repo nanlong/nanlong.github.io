@@ -1103,7 +1103,9 @@ Citus 的优势：
 - **支持跨分片事务**：使用 2PC 自动保证原子性
 - **在线扩容**：`citus_add_node` + `rebalance_table_shards` 自动重平衡
 
-关于 Citus 的详细介绍，包括架构图、适用场景、与 TiDB/CockroachDB 的对比，参见：[《数据库演进史（四）分布式数据库》](/posts/db-evolution-4-distributed/)
+**延伸阅读**：
+- Citus 完整实战指南（安装、分片键选择、迁移、运维）：[《当单机 PostgreSQL 撑不住时：Citus 分布式实战》](/posts/citus-distributed-postgresql/)
+- 分布式数据库选型对比（Citus vs TiDB vs CockroachDB）：[《数据库演进史（四）分布式数据库》](/posts/db-evolution-4-distributed/)
 
 ## 小明的选择
 
