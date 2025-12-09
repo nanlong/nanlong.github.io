@@ -129,6 +129,8 @@ body {
 }
 
 /* ========== 代码块 - 现代终端风格 ========== */
+
+/* 基础 pre 样式 */
 .post-content pre {
   background: #0c0c0c !important;
   border: 1px solid #1a3a1a;
@@ -140,12 +142,11 @@ body {
     0 4px 20px rgba(0, 0, 0, 0.5),
     0 0 30px rgba(0, 255, 65, 0.03),
     inset 0 1px 0 rgba(0, 255, 65, 0.1);
-  /* 确保等宽字符对齐 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 终端标题栏 */
+/* 终端标题栏 - 默认显示 terminal */
 .post-content pre::before {
   content: "● ● ●  terminal";
   display: block;
@@ -153,27 +154,56 @@ body {
   color: var(--matrix-green-dim);
   padding: 0.6em 1em;
   font-size: 0.75rem;
+  font-family: 'JetBrains Mono', 'Menlo', monospace;
   border-bottom: 1px solid #1a3a1a;
   letter-spacing: 0.05em;
 }
 
+/* 基础 code 样式 - 确保所有代码块都能正确渲染 */
 .post-content pre code {
   display: block;
   padding: 1.2em 1.5em;
   color: var(--matrix-green) !important;
-  /* 中文使用 Noto Sans SC，英文使用等宽字体 */
-  font-family: 'Menlo', 'Monaco', 'Consolas', 'Noto Sans SC', monospace !important;
+  background: transparent !important;
+  /* 字体回退链：优先等宽字体，中文使用 Noto Sans SC */
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', 'Noto Sans SC', 'PingFang SC', monospace !important;
   font-size: 14px;
   line-height: 1.8;
   overflow-x: auto;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  white-space: pre;
+  word-wrap: normal;
   tab-size: 4;
+  /* 关键：禁用语法高亮器可能应用的错误样式 */
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: none;
 }
 
-/* 语法高亮代码块 */
+/* 语法高亮代码块（有语言标记）- 显示 code */
 .post-content .highlight pre::before {
   content: "● ● ●  code";
+}
+
+/* 确保 .highlight 内的 pre 和 code 样式正确 */
+.post-content .highlight {
+  background: transparent !important;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.post-content .highlight pre {
+  margin: 0;
+  border-radius: 8px;
+}
+
+.post-content .highlight pre code {
+  background: transparent !important;
+}
+
+/* 强制所有 span 内的文本使用正确字体（修复语法高亮器乱码） */
+.post-content pre code span {
+  font-family: inherit !important;
+  background: transparent !important;
 }
 
 /* 行内代码 */

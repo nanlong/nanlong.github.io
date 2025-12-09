@@ -94,7 +94,8 @@ home = ["HTML", "RSS", "JSON"]
 style = "dracula"
 lineNos = false
 noClasses = false
-guessSyntax = true
+guessSyntax = false
+codeFences = true
 
 [markup.goldmark.renderer]
 unsafe = true
