@@ -2,7 +2,7 @@
 title: "从单机到分布式：一致性实战（四）数据分片：跨分片事务一致性"
 date: 2025-12-11T10:30:00+08:00
 draft: false
-tags: ["一致性", "分库分表", "分片", "PostgreSQL", "Rust"]
+tags: ["一致性", "分库分表", "分片", "PostgreSQL", "Citus", "Rust"]
 categories: ["技术"]
 description: "当数据被分散到多个数据库时，如何保证跨分片查询的一致性和跨分片事务的原子性？本文详解分片策略与跨分片事务的实现方案"
 series: ["从单机到分布式：一致性实战"]
@@ -1076,6 +1076,34 @@ impl ConsistentHash {
         ├─ 需要强一致？ → 2PC（慎用）
         └─ 可接受最终一致？ → Saga 或消息驱动
 ```
+
+## 更优选择：透明分片
+
+上面讲的都是**应用层分片**方案——需要在代码中实现分片路由、跨分片查询聚合、跨分片事务协调。这些方案适合已有系统的渐进式改造，或者需要精细控制的场景。
+
+但如果是**新项目**，或者团队不想维护复杂的分片逻辑，有更简单的选择：
+
+**PostgreSQL + Citus 扩展**
+
+```sql
+-- 安装 Citus 后，分片对应用完全透明
+CREATE EXTENSION citus;
+
+-- 将订单表声明为分布式表
+SELECT create_distributed_table('orders', 'user_id');
+
+-- 之后就像操作单库一样，Citus 自动处理分片路由、跨分片查询、跨分片事务
+INSERT INTO orders (user_id, amount) VALUES (123, 99.99);
+SELECT * FROM orders WHERE created_at > '2024-01-01';  -- 自动并行查询所有分片
+```
+
+Citus 的优势：
+- **应用代码无需改造**：ORM、sqlx 等可以直接使用
+- **自动跨分片查询**：Citus 协调器自动聚合结果
+- **支持跨分片事务**：使用 2PC 自动保证原子性
+- **在线扩容**：`citus_add_node` + `rebalance_table_shards` 自动重平衡
+
+关于 Citus 的详细介绍，包括架构图、适用场景、与 TiDB/CockroachDB 的对比，参见：[《数据库演进史（四）分布式数据库》](/posts/db-evolution-4-distributed/)
 
 ## 小明的选择
 
