@@ -19,7 +19,7 @@ DBA 说："该分库分表了。"
 
 **有没有更简单的方案？**
 
-有。让我介绍 Citus——PostgreSQL 的分布式扩展。它让分片对应用**完全透明**，你的 ORM、sqlx、所有 SQL 都不用改。
+有。让我介绍 Citus——PostgreSQL 的分布式扩展。它让分片对应用**几乎透明**，大部分 SQL 不用改，ORM 和 sqlx 可以直接用。
 
 ## Citus 是什么
 
@@ -65,53 +65,86 @@ DBA 说："该分库分表了。"
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
 services:
   coordinator:
     image: citusdata/citus:12.1
+    container_name: citus_coordinator
     ports:
       - "5432:5432"
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    command: ["postgres", "-c", "shared_preload_libraries=citus"]
+      POSTGRES_DB: mydb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - citus-network
 
   worker1:
     image: citusdata/citus:12.1
+    container_name: citus_worker1
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    command: ["postgres", "-c", "shared_preload_libraries=citus"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - citus-network
 
   worker2:
     image: citusdata/citus:12.1
+    container_name: citus_worker2
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    command: ["postgres", "-c", "shared_preload_libraries=citus"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - citus-network
+
+networks:
+  citus-network:
+    driver: bridge
 ```
 
-启动集群：
+启动集群并等待健康检查通过：
 
 ```bash
 docker-compose up -d
+docker-compose ps  # 确认所有服务状态为 healthy
 ```
 
 ### 2. 注册 Worker 节点
 
 连接到 Coordinator，注册 Worker：
 
+```bash
+# 连接到 coordinator（使用刚才配置的数据库）
+psql -h localhost -U postgres -d mydb
+```
+
 ```sql
--- 连接到 coordinator
-psql -h localhost -U postgres
-
 -- 启用 Citus 扩展
-CREATE EXTENSION citus;
+CREATE EXTENSION IF NOT EXISTS citus;
 
--- 注册 worker 节点
-SELECT citus_add_node('worker1', 5432);
-SELECT citus_add_node('worker2', 5432);
+-- 注册 worker 节点（使用 Docker 容器名）
+SELECT citus_add_node('citus_worker1', 5432);
+SELECT citus_add_node('citus_worker2', 5432);
 
 -- 验证集群状态
 SELECT * FROM citus_get_active_worker_nodes();
 ```
+
+如果看到两个 worker 节点，说明集群已就绪。
 
 ### 3. 创建分布式表
 
@@ -125,7 +158,7 @@ CREATE TABLE orders (
     book_id BIGINT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (user_id, id)  -- 分片键必须在主键中
 );
 
@@ -150,7 +183,7 @@ SELECT COUNT(*), SUM(amount)
 FROM orders
 WHERE created_at > '2024-01-01';
 
--- JOIN（如果相关表用相同分片键，则单分片完成）
+-- JOIN（共置表之间的 JOIN 在单分片完成，详见下文 Co-location）
 SELECT o.*, u.name
 FROM orders o
 JOIN users u ON o.user_id = u.id
@@ -225,14 +258,14 @@ CREATE TABLE admin_logs (
 
 ```sql
 -- 多租户 SaaS：按 tenant_id 分片
-SELECT create_distributed_table('orders', 'tenant_id');
-SELECT create_distributed_table('users', 'tenant_id');
-SELECT create_distributed_table('products', 'tenant_id');
+SELECT create_distributed_table('tenants', 'id');
+SELECT create_distributed_table('users', 'tenant_id', colocate_with => 'tenants');
+SELECT create_distributed_table('orders', 'tenant_id', colocate_with => 'tenants');
 
 -- 好处：同一租户的所有数据在同一分片，查询是本地的
 SELECT * FROM orders o
-JOIN users u ON o.user_id = u.id
-WHERE o.tenant_id = 'acme-corp';  -- 单分片完成！
+JOIN users u ON o.tenant_id = u.tenant_id AND o.user_id = u.id
+WHERE o.tenant_id = 1001;  -- 单分片完成！
 ```
 
 ### 差的分片键
@@ -256,23 +289,44 @@ SELECT * FROM orders WHERE user_id = 123;  -- 跨所有分片
 
 ### Co-location：让 JOIN 变快
 
-当多个表用相同的分片键，它们的数据会**共置**（co-located）在同一分片：
+Co-location（共置）是 Citus 性能优化的关键。**同一分片键值的数据在同一物理节点**，JOIN 才能在本地完成。
+
+**重要**：Co-location 需要显式配置，不是自动的！
 
 ```sql
--- 三个表都按 user_id 分片
+-- 第一个表：创建时指定分片数（默认 32）
 SELECT create_distributed_table('users', 'id');
-SELECT create_distributed_table('orders', 'user_id');
-SELECT create_distributed_table('order_items', 'user_id');
 
--- 这个 JOIN 完全在单分片内完成，性能极好
+-- 后续表：使用 colocate_with 参数确保共置
+SELECT create_distributed_table('orders', 'user_id', colocate_with => 'users');
+SELECT create_distributed_table('order_items', 'user_id', colocate_with => 'users');
+```
+
+共置后，以下 JOIN 完全在单分片内完成：
+
+```sql
 SELECT u.name, o.id, oi.product_name
 FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id AND o.user_id = oi.user_id
-WHERE u.id = 123;
+WHERE u.id = 123;  -- 单分片查询，性能极好
 ```
 
-**注意**：`order_items` 表的外键不是 `order_id`，而是 `(user_id, order_id)`。这是 Citus 的常见模式——分片键必须出现在所有关联中。
+**Co-location 的条件**：
+- 分片键类型相同（都是 BIGINT）
+- 分片数相同
+- 使用 `colocate_with` 参数或在同一 colocation group
+
+**验证共置状态**：
+
+```sql
+SELECT logicalrelid, colocationid
+FROM pg_dist_partition
+WHERE logicalrelid IN ('users'::regclass, 'orders'::regclass);
+-- colocationid 相同表示已共置
+```
+
+**注意**：`order_items` 表的主键应该是 `(user_id, order_id, id)`，分片键必须出现在所有唯一约束中。
 
 ## 跨分片查询：Citus 的魔法
 
@@ -340,8 +394,8 @@ COMMIT;  -- Citus 自动用 2PC 保证原子性
 业务增长，需要加节点？Citus 让这变得简单：
 
 ```sql
--- 1. 添加新 Worker
-SELECT citus_add_node('worker3', 5432);
+-- 1. 添加新 Worker（如果是 Docker 环境，使用容器名）
+SELECT citus_add_node('citus_worker3', 5432);
 
 -- 2. 重新平衡分片（在线进行，不停服务）
 SELECT rebalance_table_shards();
@@ -357,14 +411,30 @@ Citus 会自动将部分分片从旧节点迁移到新节点，整个过程**应
 Citus 对应用透明，sqlx 代码几乎不用改：
 
 ```rust
-use sqlx::PgPool;
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
+use sqlx::{FromRow, PgPool};
+
+/// 订单实体
+#[derive(Debug, FromRow)]
+pub struct Order {
+    pub id: i64,
+    pub user_id: i64,
+    pub book_id: i64,
+    pub amount: Decimal,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+}
 
 pub struct OrderRepository {
     pool: PgPool,  // 连接到 Citus Coordinator
 }
 
 impl OrderRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+
     /// 创建订单（自动路由到正确分片）
     pub async fn create_order(
         &self,
@@ -372,7 +442,7 @@ impl OrderRepository {
         book_id: i64,
         amount: Decimal,
     ) -> Result<i64, sqlx::Error> {
-        let record = sqlx::query!(
+        let record = sqlx::query_scalar!(
             r#"
             INSERT INTO orders (user_id, book_id, amount)
             VALUES ($1, $2, $3)
@@ -385,14 +455,19 @@ impl OrderRepository {
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(record.id)
+        Ok(record)
     }
 
     /// 查询用户订单（单分片查询）
     pub async fn get_user_orders(&self, user_id: i64) -> Result<Vec<Order>, sqlx::Error> {
         sqlx::query_as!(
             Order,
-            "SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC",
+            r#"
+            SELECT id, user_id, book_id, amount, status, created_at
+            FROM orders
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            "#,
             user_id
         )
         .fetch_all(&self.pool)
@@ -402,19 +477,23 @@ impl OrderRepository {
     /// 统计订单总额（跨分片聚合）
     pub async fn get_total_amount_since(
         &self,
-        since: chrono::DateTime<chrono::Utc>,
+        since: DateTime<Utc>,
     ) -> Result<Decimal, sqlx::Error> {
-        let record = sqlx::query!(
-            "SELECT COALESCE(SUM(amount), 0) as total FROM orders WHERE created_at > $1",
+        let total = sqlx::query_scalar!(
+            r#"SELECT COALESCE(SUM(amount), 0) as "total!" FROM orders WHERE created_at > $1"#,
             since
         )
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(record.total.unwrap_or_default())
+        Ok(total)
     }
 }
 ```
+
+**说明**：
+- 使用 `"total!"` 语法告诉 sqlx 该字段非空（因为有 `COALESCE`）
+- 显式列出 SELECT 字段，避免 `SELECT *` 带来的类型推断问题
 
 **关键点**：代码和单机 PostgreSQL 完全一样。唯一的区别是连接字符串指向 Coordinator。
 
@@ -428,6 +507,133 @@ let pool = PgPoolOptions::new()
     .connect("postgres://user:pass@coordinator:5432/mydb")
     .await?;
 ```
+
+## sqlx 数据库迁移
+
+使用 sqlx 迁移时，需要处理 Citus 特有的表分布式化操作。好消息是：**大部分 DDL 自动传播，只有建表时需要特殊处理**。
+
+### 迁移文件结构
+
+```text
+migrations/
+├── 20241201000001_create_users.sql      ← 建表 + 分布式化
+├── 20241201000002_create_orders.sql     ← 建表 + 分布式化
+├── 20241201000003_add_user_phone.sql    ← 普通 ALTER，自动传播
+└── 20241201000004_add_order_index.sql   ← 普通 INDEX，自动传播
+```
+
+### 建表迁移（需要分布式化）
+
+```sql
+-- migrations/20241201000001_create_users.sql
+
+-- 创建表（分片键必须在主键中）
+CREATE TABLE users (
+    id BIGSERIAL,
+    tenant_id BIGINT NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    name VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (tenant_id, id)
+);
+
+CREATE INDEX idx_users_email ON users(email);
+
+-- 分布式化（兼容无 Citus 的开发环境）
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'citus') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_catalog.pg_dist_partition
+            WHERE logicalrelid = 'users'::regclass
+        ) THEN
+            PERFORM create_distributed_table('users', 'tenant_id');
+        END IF;
+    END IF;
+END $$;
+```
+
+**关键点**：
+- `IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'citus')` — 兼容无 Citus 的本地开发环境
+- `IF NOT EXISTS ... pg_dist_partition` — 幂等检查，避免重复分布式化报错
+
+### 修改表迁移（无需特殊处理）
+
+后续的 `ALTER TABLE`、`CREATE INDEX` 等 DDL **自动传播到所有分片**，无需 Citus 特殊处理：
+
+```sql
+-- migrations/20241201000003_add_user_phone.sql
+
+-- 普通 SQL，Citus 自动传播到所有分片
+ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+```
+
+```sql
+-- migrations/20241201000004_add_order_index.sql
+
+-- 普通索引，Citus 在所有分片上创建
+CREATE INDEX idx_orders_created ON orders(created_at);
+```
+
+**注意**：`CREATE INDEX CONCURRENTLY` 不能在事务中执行，而 sqlx 默认在事务中运行迁移。如果需要不锁表创建索引，应该在迁移外手动执行。
+
+### 引用表迁移
+
+小表使用 `create_reference_table`：
+
+```sql
+-- migrations/20241201000005_create_categories.sql
+
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'citus') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_catalog.pg_dist_partition
+            WHERE logicalrelid = 'categories'::regclass
+        ) THEN
+            PERFORM create_reference_table('categories');
+        END IF;
+    END IF;
+END $$;
+```
+
+### 运行迁移
+
+```rust
+use sqlx::postgres::PgPoolOptions;
+
+#[tokio::main]
+async fn main() -> Result<(), sqlx::Error> {
+    let pool = PgPoolOptions::new()
+        .connect("postgres://user:pass@coordinator:5432/mydb")
+        .await?;
+
+    // 迁移在 Coordinator 上执行，DDL 自动传播到 Workers
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await?;
+
+    Ok(())
+}
+```
+
+### 什么时候需要 Citus 特殊处理？
+
+| 操作 | 需要 DO $$ 检查？ |
+|------|------------------|
+| `CREATE TABLE` | ❌ 不需要 |
+| `create_distributed_table()` | ✅ 需要 |
+| `create_reference_table()` | ✅ 需要 |
+| `ALTER TABLE ADD/DROP COLUMN` | ❌ 不需要（自动传播）|
+| `CREATE/DROP INDEX` | ❌ 不需要（自动传播）|
+| `ALTER TABLE ADD CONSTRAINT` | ❌ 不需要（自动传播）|
+
+**最佳实践**：建表和分布式化写在同一个迁移文件，后续修改用普通 SQL。
 
 ## 从单机迁移到 Citus
 
@@ -450,13 +656,16 @@ LIMIT 10;
 
 ### 步骤 2：确定分片键
 
-分析查询模式：
+分析查询模式（需先启用 `pg_stat_statements` 扩展）：
 
 ```sql
+-- 启用扩展（如果还没有）
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
 -- 查看最慢的查询
-SELECT query, calls, mean_time
+SELECT query, calls, mean_exec_time
 FROM pg_stat_statements
-ORDER BY mean_time DESC
+ORDER BY mean_exec_time DESC
 LIMIT 20;
 ```
 
@@ -467,14 +676,14 @@ LIMIT 20;
 分片键必须是主键的一部分：
 
 ```sql
--- 原表
+-- 原表（假设主键只有 id）
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT,
-    ...
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(10,2)
 );
 
--- 改为复合主键
+-- 改为复合主键（分片键 + 原主键）
 ALTER TABLE orders DROP CONSTRAINT orders_pkey;
 ALTER TABLE orders ADD PRIMARY KEY (user_id, id);
 ```
@@ -482,18 +691,29 @@ ALTER TABLE orders ADD PRIMARY KEY (user_id, id);
 ### 步骤 4：迁移数据
 
 ```sql
--- 在 Citus 集群中创建表结构
-CREATE TABLE orders (...);
+-- 在 Citus 集群中创建表结构（注意复合主键）
+CREATE TABLE orders (
+    id BIGSERIAL,
+    user_id BIGINT NOT NULL,
+    book_id BIGINT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (user_id, id)
+);
 
 -- 将表转为分布式
 SELECT create_distributed_table('orders', 'user_id');
 
--- 从旧库导入数据
-\copy orders FROM '/path/to/orders.csv' WITH CSV;
+-- 从旧库导出数据（仅数据，不含 schema）
+-- 在旧库执行：
+\copy orders TO '/path/to/orders.csv' WITH CSV HEADER;
 
--- 或使用 pg_dump + psql
-pg_dump -t orders old_db | psql citus_db
+-- 导入到 Citus（Citus 自动路由到正确分片）
+\copy orders FROM '/path/to/orders.csv' WITH CSV HEADER;
 ```
+
+**注意**：不要直接用 `pg_dump | psql`，因为它会尝试重建表结构，而我们需要先手动创建分布式表。
 
 ### 步骤 5：验证
 
@@ -544,6 +764,64 @@ SELECT alter_distributed_table('orders', shard_count := 64);
 -- 使用 pg_stat_statements 分析
 ```
 
+## 限制与注意事项
+
+Citus 不是银弹，了解其限制有助于避免踩坑：
+
+### SQL 功能限制
+
+| 功能 | 支持情况 | 说明 |
+|------|---------|------|
+| 基本 CRUD | ✅ 完全支持 | |
+| JOIN（共置表）| ✅ 完全支持 | 需要配置 co-location |
+| JOIN（非共置表）| ⚠️ 部分支持 | 可能触发跨节点数据传输 |
+| 子查询 | ⚠️ 部分支持 | 相关子查询有限制 |
+| CTE (WITH) | ⚠️ 部分支持 | 不支持递归 CTE |
+| 窗口函数 | ⚠️ 部分支持 | PARTITION BY 需包含分片键 |
+| 外键约束 | ⚠️ 有限制 | 仅支持同一 colocation group 内的表 |
+| 唯一约束 | ⚠️ 有限制 | **必须包含分片键** |
+| TRUNCATE | ✅ 支持 | |
+| COPY | ✅ 支持 | |
+
+### 必须遵守的规则
+
+**1. 主键和唯一约束必须包含分片键**
+
+```sql
+-- ❌ 错误：唯一约束不含分片键
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,  -- 错误！
+    user_id BIGINT NOT NULL,
+    email VARCHAR(255) UNIQUE  -- 错误！
+);
+
+-- ✅ 正确：分片键在所有唯一约束中
+CREATE TABLE orders (
+    id BIGSERIAL,
+    user_id BIGINT NOT NULL,
+    email VARCHAR(255),
+    PRIMARY KEY (user_id, id),
+    UNIQUE (user_id, email)
+);
+```
+
+**2. 跨分片事务有性能开销**
+
+跨分片事务需要额外的网络往返（2PC 协调），延迟通常是单分片事务的数倍。设计时应尽量让事务在单分片内完成。
+
+**3. 分片键一旦选定难以更改**
+
+更改分片键意味着重建整个表。选择前务必分析查询模式。
+
+### 不适合 Citus 的场景
+
+| 场景 | 原因 | 替代方案 |
+|------|------|---------|
+| 复杂分析查询（OLAP） | 跨分片聚合开销大 | 使用 ClickHouse、Doris |
+| 图数据库场景 | 关系遍历跨分片 | 使用 Neo4j |
+| 全文搜索 | 跨分片搜索效率低 | 使用 Elasticsearch |
+| 无明确分片键的场景 | 所有查询都跨分片 | 考虑垂直拆分 |
+
 ## Citus vs 手动分片 vs NewSQL
 
 | 特性 | 手动分片 | Citus | TiDB/CockroachDB |
@@ -565,7 +843,7 @@ SELECT alter_distributed_table('orders', shard_count := 64);
 
 ### Q：性能损失大吗？
 
-**A：单分片查询几乎无损失**（< 1ms 开销）。跨分片查询有网络开销，但 Citus 会并行执行，通常比单机全表扫描快。
+**A：单分片查询开销很小**（通常亚毫秒级）。跨分片查询有网络开销，但 Citus 会并行执行，对于大表通常比单机全表扫描快。实际性能取决于网络延迟、分片数量和查询复杂度。
 
 ### Q：能和现有 PostgreSQL 工具一起用吗？
 
