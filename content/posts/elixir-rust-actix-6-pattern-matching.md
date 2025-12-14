@@ -1,6 +1,6 @@
 ---
 title: "Elixir 到 Rust Actix（六）：模式匹配——熟悉的语法，不同的能力"
-date: 2025-12-15T01:00:00+08:00
+date: 2025-12-14T23:20:00+08:00
 draft: false
 tags: ["Elixir", "Rust", "模式匹配", "类型系统"]
 categories: ["技术"]

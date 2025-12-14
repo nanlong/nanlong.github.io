@@ -1,6 +1,6 @@
 ---
 title: "Elixir 到 Rust Actix（五）：容错机制——Let it crash vs 不让你 crash"
-date: 2025-12-15T00:00:00+08:00
+date: 2025-12-14T23:10:00+08:00
 draft: false
 tags: ["Elixir", "Rust", "Actix", "容错", "Supervisor", "错误处理"]
 categories: ["技术"]

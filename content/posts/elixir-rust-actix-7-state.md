@@ -1,6 +1,6 @@
 ---
 title: "Elixir 到 Rust Actix（七）：状态管理——从 Agent/ETS 到 Rust 的选择"
-date: 2025-12-15T02:00:00+08:00
+date: 2025-12-14T23:30:00+08:00
 draft: false
 tags: ["Elixir", "Rust", "Actix", "状态管理", "ETS", "Agent", "并发"]
 categories: ["技术"]
