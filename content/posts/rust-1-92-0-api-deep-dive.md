@@ -193,13 +193,7 @@ fn main() {
 }
 ```
 
-**为什么返回 `MaybeUninit`？** 因为"零初始化"对某些类型来说**不是有效的初始状态**：
-
-- `NonZero<T>`：零不是有效值
-- 引用：null 不是有效引用
-- 某些枚举：零可能不是有效的判别值
-
-`MaybeUninit` 告诉编译器："我知道这块内存可能还没准备好"。
+**为什么返回 `MaybeUninit`？** 对于 `new_zeroed()` 的典型用例（数值数组），全零总是有效的。但 Rust 类型系统无法证明"全零对于任意 `T` 是有效的"，所以 API 采用保守设计：返回 `MaybeUninit<T>`，让程序员通过 `unsafe { assume_init() }` 显式承诺类型有效性。
 
 ### 实战用法
 
@@ -245,7 +239,7 @@ Box::new_zeroed() + assume_init()
 - 通过类型系统强制程序员处理"未初始化"状态
 - 提供 `unsafe` 逃生舱口，但把责任明确交给程序员
 
-这也是为什么 API 返回 `MaybeUninit` 而不是直接返回零初始化的值——Rust 宁可让你多写几行代码，也不愿意让你无意中创建无效状态。
+这也是为什么 API 返回 `MaybeUninit`——虽然对于典型用例全零总是有效的，但类型系统无法表达这个约束，所以用 `unsafe` 让程序员显式承诺。
 
 ## 三、NonZero::div_ceil：小而美的补全
 
@@ -424,6 +418,8 @@ fn my_unwrap<T>(opt: Option<T>) -> T {
 当你需要把位置信息传给 C 代码时：
 
 ```rust
+use std::ffi::{CString, c_char};
+
 // FFI 场景：调用 C 的日志库
 extern "C" {
     fn c_log(file: *const c_char, line: u32, message: *const c_char);
@@ -435,7 +431,7 @@ fn log_from_rust(message: &str) {
     let message_cstr = CString::new(message).unwrap();
 
     // 之前：需要额外分配
-    let file_cstr = CString::new(loc.file()).unwrap();
+    // let file_cstr = CString::new(loc.file()).unwrap();
 
     // 现在：零分配
     let file_cstr = loc.file_as_c_str();
@@ -468,7 +464,7 @@ impl Extend<Punct> for TokenStream { ... }
 ### 之前怎么做？
 
 ```rust
-use proc_macro::{TokenStream, TokenTree, Ident, Literal, Punct, Spacing};
+use proc_macro::{TokenStream, TokenTree, Ident, Literal, Punct, Spacing, Span};
 
 fn build_token_stream() -> TokenStream {
     let mut tokens = TokenStream::new();
@@ -491,6 +487,8 @@ fn build_token_stream() -> TokenStream {
 ### 现在：更直接
 
 ```rust
+use proc_macro::{TokenStream, Ident, Literal, Punct, Spacing, Span};
+
 fn build_token_stream() -> TokenStream {
     let mut tokens = TokenStream::new();
 
