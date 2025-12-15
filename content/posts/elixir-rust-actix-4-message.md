@@ -547,6 +547,8 @@ impl StreamHandler<Item> for MyActor {
 **A：使用枚举合并相关消息。**
 
 ```rust
+use actix::dev::MessageResponse;
+
 // 不要这样：每个操作一个类型
 struct GetUser { id: u64 }
 struct CreateUser { name: String }
@@ -567,6 +569,19 @@ enum UserResult {
     Deleted,
 }
 
+// 重要：自定义枚举作为结果类型时，需要实现 MessageResponse
+impl<A, M> MessageResponse<A, M> for UserResult
+where
+    A: Actor,
+    M: Message<Result = UserResult>,
+{
+    fn handle(self, _ctx: &mut A::Context, tx: Option<actix::dev::OneshotSender<M::Result>>) {
+        if let Some(tx) = tx {
+            let _ = tx.send(self);
+        }
+    }
+}
+
 // 一个 Handler 处理所有
 impl Handler<UserCommand> for UserActor {
     type Result = UserResult;
@@ -580,6 +595,8 @@ impl Handler<UserCommand> for UserActor {
     }
 }
 ```
+
+**注意**：Actix 为常用类型（如 `Option<T>`、`Result<T, E>`、`()`）已内置 `MessageResponse` 实现。但自定义枚举需要手动实现。
 
 ## 总结
 
