@@ -15,35 +15,29 @@ Rust 1.92.0 于 2025 年 12 月 11 日发布。这个版本没有惊天动地的
 
 ## 总览：这个版本稳定了什么？
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    Rust 1.92.0 新稳定 API                        │
-├─────────────────────────────────────────────────────────────────┤
-│  并发相关                                                        │
-│  • RwLockWriteGuard::downgrade                                  │
-├─────────────────────────────────────────────────────────────────┤
-│  智能指针零初始化                                                │
-│  • Box::new_zeroed / new_zeroed_slice                           │
-│  • Rc::new_zeroed / new_zeroed_slice                            │
-│  • Arc::new_zeroed / new_zeroed_slice                           │
-├─────────────────────────────────────────────────────────────────┤
-│  数值计算                                                        │
-│  • NonZero<u{N}>::div_ceil                                      │
-├─────────────────────────────────────────────────────────────────┤
-│  集合操作                                                        │
-│  • btree_map::Entry::insert_entry                               │
-│  • btree_map::VacantEntry::insert_entry                         │
-├─────────────────────────────────────────────────────────────────┤
-│  FFI / 调试                                                      │
-│  • Location::file_as_c_str                                      │
-├─────────────────────────────────────────────────────────────────┤
-│  过程宏                                                          │
-│  • TokenStream: Extend<Group/Literal/Punct/Ident>               │
-├─────────────────────────────────────────────────────────────────┤
-│  常量化                                                          │
-│  • <[_]>::rotate_left / rotate_right (const)                    │
-└─────────────────────────────────────────────────────────────────┘
-```
+**并发相关**
+- `RwLockWriteGuard::downgrade`
+
+**智能指针零初始化**
+- `Box::new_zeroed` / `new_zeroed_slice`
+- `Rc::new_zeroed` / `new_zeroed_slice`
+- `Arc::new_zeroed` / `new_zeroed_slice`
+
+**数值计算**
+- `NonZero<u{N}>::div_ceil`
+
+**集合操作**
+- `btree_map::Entry::insert_entry`
+- `btree_map::VacantEntry::insert_entry`
+
+**FFI / 调试**
+- `Location::file_as_c_str`
+
+**过程宏**
+- `TokenStream: Extend<Group/Literal/Punct/Ident>`
+
+**常量化**
+- `<[_]>::rotate_left` / `rotate_right` (const)
 
 让我们逐个深入。
 
@@ -59,122 +53,60 @@ impl<T: ?Sized> RwLockWriteGuard<'_, T> {
 
 简单说：**把写锁降级为读锁，而不释放锁**。
 
-### 痛点：之前怎么做？
+### 使用场景
 
-在 1.92.0 之前，如果你持有写锁，想切换到读锁，只能这样：
-
-```rust
-use std::sync::RwLock;
-
-let lock = RwLock::new(42);
-
-// 获取写锁，修改数据
-{
-    let mut write_guard = lock.write().unwrap();
-    *write_guard = 100;
-}  // 写锁释放
-
-// 重新获取读锁
-let read_guard = lock.read().unwrap();
-println!("Value: {}", *read_guard);
-```
-
-**问题在哪？** 在 `}` 释放写锁和 `lock.read()` 获取读锁之间，存在一个**时间窗口**。其他线程可能在这个窗口里抢到写锁，修改数据。
-
-这在某些场景下是致命的：
-
-```rust
-// 场景：初始化缓存
-fn get_or_init(cache: &RwLock<Option<ExpensiveData>>) -> ExpensiveData {
-    // 先尝试读
-    {
-        let read = cache.read().unwrap();
-        if let Some(data) = &*read {
-            return data.clone();
-        }
-    }  // 读锁释放
-
-    // 没有数据，获取写锁初始化
-    let mut write = cache.write().unwrap();
-
-    // 问题：其他线程可能在我们释放读锁后、获取写锁前，已经初始化了！
-    // 必须再次检查（双重检查锁定）
-    if let Some(data) = &*write {
-        return data.clone();
-    }
-
-    let data = expensive_computation();
-    *write = Some(data.clone());
-    data
-    // 写锁释放后，其他线程才能读
-}
-```
-
-这个模式叫**双重检查锁定**（Double-Checked Locking），代码繁琐且容易出错。
-
-### downgrade 解决什么问题？
-
-`downgrade` **不是**用来简化双重检查锁定的。它解决的是另一个问题：**修改数据后，需要长时间持有锁读取，同时希望其他线程也能并发读**。
-
-看这个场景：
+`downgrade` 解决的核心问题：**修改数据后，需要继续持有锁读取，同时希望其他线程也能并发读**。
 
 ```rust
 use std::sync::{RwLock, RwLockWriteGuard};
+use std::thread;
+use std::time::Duration;
 
-// 场景：更新配置后，需要基于新配置执行耗时的只读计算
-fn update_and_compute(config: &RwLock<Config>) -> ComputeResult {
-    // 1. 获取写锁，更新配置
-    let mut write = config.write().unwrap();
-    write.apply_updates();
-
-    // 问题来了：接下来要基于新配置做耗时计算
-    // 如果继续持有写锁，其他线程完全阻塞
-    // 如果释放写锁再获取读锁，存在时间窗口
+fn update_and_compute(data: &RwLock<Vec<i32>>) -> i64 {
+    // 1. 获取写锁，修改数据
+    let mut write = data.write().unwrap();
+    write.push(42);
 
     // 2. 降级为读锁：原子操作，没有时间窗口
     let read = RwLockWriteGuard::downgrade(write);
 
     // 3. 耗时的只读计算（此时其他线程可以并发读！）
-    expensive_read_only_computation(&read)
+    thread::sleep(Duration::from_millis(100));
+    read.iter().map(|&x| x as i64).sum()
+}
+
+fn main() {
+    let data = RwLock::new(vec![1, 2, 3]);
+    let result = update_and_compute(&data);
+    println!("结果: {}", result);  // 输出: 结果: 48
 }
 ```
 
-**关键点**：
-- `downgrade` 是原子操作，锁从未被释放
-- 降级后，其他线程可以立即获取读锁并发读取
-- 如果不降级，其他线程必须等待整个函数完成
-
-### 对比：不使用 downgrade 的两种选择
+**为什么不能先释放写锁再获取读锁？** 因为存在时间窗口：
 
 ```rust
-// 选项 A：继续持有写锁
-fn update_and_compute_v1(config: &RwLock<Config>) -> ComputeResult {
-    let mut write = config.write().unwrap();
-    write.apply_updates();
-    expensive_computation(&write)  // 其他线程完全阻塞 100ms
-}
+use std::sync::RwLock;
 
-// 选项 B：释放写锁，重新获取读锁
-fn update_and_compute_v2(config: &RwLock<Config>) -> ComputeResult {
+fn update_and_compute_bad(data: &RwLock<Vec<i32>>) -> i64 {
     {
-        let mut write = config.write().unwrap();
-        write.apply_updates();
+        let mut write = data.write().unwrap();
+        write.push(42);
     }  // 写锁释放
 
-    // 时间窗口：其他线程可能在这里修改配置！
+    // 时间窗口：其他线程可能在这里修改数据！
 
-    let read = config.read().unwrap();
-    expensive_computation(&read)  // 读到的可能不是我们刚更新的配置
+    let read = data.read().unwrap();
+    read.iter().map(|&x| x as i64).sum()  // 读到的可能不是我们刚修改的数据
 }
 
-// 选项 C：使用 downgrade（最佳）
-fn update_and_compute_v3(config: &RwLock<Config>) -> ComputeResult {
-    let mut write = config.write().unwrap();
-    write.apply_updates();
-    let read = RwLockWriteGuard::downgrade(write);  // 原子降级
-    expensive_computation(&read)  // 其他线程可以并发读
+fn main() {
+    let data = RwLock::new(vec![1, 2, 3]);
+    let result = update_and_compute_bad(&data);
+    println!("结果: {}", result);  // 单线程下输出 48，但多线程下可能不一致
 }
 ```
+
+`downgrade` 是原子操作，锁从未被释放，保证读到的一定是自己刚修改的数据。
 
 ### 生态影响
 
@@ -246,53 +178,46 @@ let huge_array = Box::new([0u8; 10 * 1024 * 1024]);  // 10MB，可能栈溢出
 ### 零初始化的优势
 
 ```rust
-use std::mem::MaybeUninit;
+fn main() {
+    // 固定大小数组：直接在堆上分配并零初始化
+    let big_array: Box<[u8; 1024]> = unsafe {
+        Box::new_zeroed().assume_init()
+    };
+    println!("数组长度: {}", big_array.len());
 
-// 直接在堆上分配并零初始化，没有栈上的中间副本
-let big_array: Box<[u8; 1024 * 1024]> = unsafe {
-    Box::new_zeroed().assume_init()
-};
-
-// 对于切片
-let dynamic_array: Box<[u8]> = unsafe {
-    Box::new_zeroed_slice(1024 * 1024)
-        .assume_init()  // 注意：这个方法在切片上不直接可用
-        // 实际需要其他方式，见下文
-};
+    // 动态大小切片
+    let dynamic_array: Box<[u8]> = unsafe {
+        Box::new_zeroed_slice(1024).assume_init()
+    };
+    println!("切片长度: {}", dynamic_array.len());
+}
 ```
 
 **为什么返回 `MaybeUninit`？** 因为"零初始化"对某些类型来说**不是有效的初始状态**：
 
-```rust
-// 零初始化对这些类型是无效的：
-// - NonZero<T>：零不是有效值
-// - 引用：null 不是有效引用
-// - 某些枚举：零可能不是有效的判别值
+- `NonZero<T>`：零不是有效值
+- 引用：null 不是有效引用
+- 某些枚举：零可能不是有效的判别值
 
-// MaybeUninit 告诉编译器："我知道这块内存可能还没准备好"
-```
+`MaybeUninit` 告诉编译器："我知道这块内存可能还没准备好"。
 
 ### 实战用法
 
 ```rust
-use std::sync::Arc;
 use std::mem::MaybeUninit;
+use std::sync::Arc;
 
-// 场景：创建一个大型共享缓冲区
 fn create_shared_buffer(size: usize) -> Arc<[u8]> {
-    // 1. 创建零初始化的 MaybeUninit 切片
     let uninit: Arc<[MaybeUninit<u8>]> = Arc::new_zeroed_slice(size);
-
-    // 2. 对于 u8，零初始化是完全有效的，可以安全转换
-    // 注意：这需要一些 unsafe 魔法
-    unsafe {
-        // 利用 MaybeUninit<u8> 和 u8 有相同的内存布局
-        Arc::from_raw(Arc::into_raw(uninit) as *const [u8])
-    }
+    // MaybeUninit<u8> 和 u8 有相同的内存布局
+    unsafe { Arc::from_raw(Arc::into_raw(uninit) as *const [u8]) }
 }
 
-// 使用
-let buffer = create_shared_buffer(1024 * 1024);  // 1MB 共享缓冲区
+fn main() {
+    let buffer = create_shared_buffer(1024);
+    println!("缓冲区大小: {} 字节", buffer.len());
+    println!("全为零: {}", buffer.iter().all(|&x| x == 0));
+}
 ```
 
 ### 性能对比
@@ -352,14 +277,18 @@ fn pages_needed(bytes: usize, page_size: usize) -> usize {
 ```rust
 use std::num::NonZero;
 
-let items = NonZero::new(100).unwrap();
-let batch_size = NonZero::new(30).unwrap();
+fn main() {
+    let items = NonZero::new(100usize).unwrap();
+    let batch_size = NonZero::new(30usize).unwrap();
 
-// 之前：需要转换
-let batches = NonZero::new(items.get().div_ceil(batch_size.get())).unwrap();
+    // 之前：需要转换
+    let batches_old = NonZero::new(items.get().div_ceil(batch_size.get())).unwrap();
 
-// 现在：直接调用
-let batches = items.div_ceil(batch_size);  // 返回 NonZero<usize>
+    // 现在：直接调用
+    let batches = items.div_ceil(batch_size);
+
+    println!("100 / 30 向上取整 = {}", batches.get());  // 输出: 4
+}
 ```
 
 ### 为什么返回值也是 NonZero？
@@ -404,33 +333,24 @@ impl<'a, K: Ord, V> VacantEntry<'a, K, V> {
 ```rust
 use std::collections::BTreeMap;
 
-let mut map = BTreeMap::new();
+fn main() {
+    let mut map: BTreeMap<&str, i32> = BTreeMap::new();
 
-// 现有的 insert 方法：返回 &mut V
-let value_ref: &mut i32 = map.entry("key").or_insert(42);
+    // 现有的 or_insert 方法：返回 &mut V
+    let value_ref: &mut i32 = map.entry("key").or_insert(42);
+    println!("value_ref = {}", value_ref);
 
-// 新的 insert_entry 方法：返回 OccupiedEntry
-let entry = map.entry("key2").insert_entry(100);
-// 现在可以：
-let key: &str = entry.key();      // 获取键的引用
-let value: &mut i32 = entry.get_mut();  // 获取值的可变引用
-entry.remove();                    // 移除整个条目
+    // 新的 insert_entry 方法：返回 OccupiedEntry
+    let entry = map.entry("key2").insert_entry(100);
+    println!("key = {}, value = {}", entry.key(), entry.get());
+}
 ```
 
 ### 使用场景
 
 ```rust
-// 场景：插入后需要同时操作键和值
-fn insert_and_log<K: Ord + std::fmt::Debug, V: std::fmt::Debug>(
-    map: &mut BTreeMap<K, V>,
-    key: K,
-    value: V,
-) {
-    let entry = map.entry(key).insert_entry(value);
-    println!("Inserted: {:?} => {:?}", entry.key(), entry.get());
-}
+use std::collections::BTreeMap;
 
-// 场景：条件性移除刚插入的值
 fn insert_if_valid<K: Ord, V>(
     map: &mut BTreeMap<K, V>,
     key: K,
@@ -439,10 +359,17 @@ fn insert_if_valid<K: Ord, V>(
 ) -> Option<V> {
     let entry = map.entry(key).insert_entry(value);
     if !is_valid(entry.key(), entry.get()) {
-        Some(entry.remove())  // 返回被移除的值
+        Some(entry.remove())
     } else {
         None
     }
+}
+
+fn main() {
+    let mut map: BTreeMap<i32, i32> = BTreeMap::new();
+    // 100 >= 50，不满足条件，被移除
+    let removed = insert_if_valid(&mut map, 1, 100, |_k, v| *v < 50);
+    println!("removed = {:?}", removed);  // 输出: Some(100)
 }
 ```
 
@@ -587,35 +514,32 @@ fn build_token_stream() -> TokenStream {
 ### 新增的能力
 
 ```rust
-// 现在可以在 const 上下文中使用
 const ROTATED: [i32; 5] = {
     let mut arr = [1, 2, 3, 4, 5];
     arr.rotate_left(2);
     arr
 };
-// ROTATED = [3, 4, 5, 1, 2]
+
+fn main() {
+    println!("{:?}", ROTATED);  // 输出: [3, 4, 5, 1, 2]
+}
 ```
 
 ### 使用场景
 
 ```rust
-// 编译期生成查找表
-const LOOKUP_TABLE: [u8; 256] = {
-    let mut table = [0u8; 256];
-    // ... 初始化 ...
-    table.rotate_left(128);  // 调整布局
-    table
-};
-
-// 编译期字符串处理
-const fn rotate_string(s: &[u8; 5], n: usize) -> [u8; 5] {
+const fn rotate_bytes(s: &[u8; 5], n: usize) -> [u8; 5] {
     let mut result = *s;
     result.rotate_left(n);
     result
 }
 
 const HELLO: [u8; 5] = *b"hello";
-const LLOHE: [u8; 5] = rotate_string(&HELLO, 2);
+const LLOHE: [u8; 5] = rotate_bytes(&HELLO, 2);
+
+fn main() {
+    println!("{}", std::str::from_utf8(&LLOHE).unwrap());  // 输出: llohe
+}
 ```
 
 ### 设计哲学
