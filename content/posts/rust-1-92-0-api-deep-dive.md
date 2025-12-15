@@ -112,34 +112,77 @@ fn get_or_init(cache: &RwLock<Option<ExpensiveData>>) -> ExpensiveData {
 
 这个模式叫**双重检查锁定**（Double-Checked Locking），代码繁琐且容易出错。
 
-### 现在：优雅地降级
+### downgrade 解决什么问题？
+
+`downgrade` **不是**用来简化双重检查锁定的。它解决的是另一个问题：**修改数据后，需要长时间持有锁读取，同时希望其他线程也能并发读**。
+
+看这个场景：
 
 ```rust
 use std::sync::{RwLock, RwLockWriteGuard};
 
-fn get_or_init(cache: &RwLock<Option<ExpensiveData>>) -> ExpensiveData {
-    // 直接获取写锁
-    let mut write = cache.write().unwrap();
+// 场景：更新配置后，需要基于新配置执行耗时的只读计算
+fn update_and_compute(config: &RwLock<Config>) -> ComputeResult {
+    // 1. 获取写锁，更新配置
+    let mut write = config.write().unwrap();
+    write.apply_updates();
 
-    if write.is_none() {
-        *write = Some(expensive_computation());
-    }
+    // 问题来了：接下来要基于新配置做耗时计算
+    // 如果继续持有写锁，其他线程完全阻塞
+    // 如果释放写锁再获取读锁，存在时间窗口
 
-    // 降级为读锁：原子操作，没有时间窗口
+    // 2. 降级为读锁：原子操作，没有时间窗口
     let read = RwLockWriteGuard::downgrade(write);
-    read.as_ref().unwrap().clone()
+
+    // 3. 耗时的只读计算（此时其他线程可以并发读！）
+    expensive_read_only_computation(&read)
 }
 ```
 
-**关键点**：`downgrade` 是原子操作。在降级过程中，锁从未被释放，其他线程无法插入。
+**关键点**：
+- `downgrade` 是原子操作，锁从未被释放
+- 降级后，其他线程可以立即获取读锁并发读取
+- 如果不降级，其他线程必须等待整个函数完成
+
+### 对比：不使用 downgrade 的两种选择
+
+```rust
+// 选项 A：继续持有写锁
+fn update_and_compute_v1(config: &RwLock<Config>) -> ComputeResult {
+    let mut write = config.write().unwrap();
+    write.apply_updates();
+    expensive_computation(&write)  // 其他线程完全阻塞 100ms
+}
+
+// 选项 B：释放写锁，重新获取读锁
+fn update_and_compute_v2(config: &RwLock<Config>) -> ComputeResult {
+    {
+        let mut write = config.write().unwrap();
+        write.apply_updates();
+    }  // 写锁释放
+
+    // 时间窗口：其他线程可能在这里修改配置！
+
+    let read = config.read().unwrap();
+    expensive_computation(&read)  // 读到的可能不是我们刚更新的配置
+}
+
+// 选项 C：使用 downgrade（最佳）
+fn update_and_compute_v3(config: &RwLock<Config>) -> ComputeResult {
+    let mut write = config.write().unwrap();
+    write.apply_updates();
+    let read = RwLockWriteGuard::downgrade(write);  // 原子降级
+    expensive_computation(&read)  // 其他线程可以并发读
+}
+```
 
 ### 生态影响
 
 这个 API 对以下场景特别有价值：
 
-1. **缓存系统**：初始化后立即读取，无需重新获取锁
-2. **配置热更新**：更新配置后，降级为读锁让其他线程立即可读
-3. **COW（Copy-on-Write）数据结构**：修改后降级，避免不必要的独占
+1. **配置热更新**：更新配置后，基于新配置执行长时间的只读操作，同时让其他线程可以读取新配置
+2. **COW（Copy-on-Write）数据结构**：修改后需要长时间读取，降级让其他读者不必等待
+3. **缓存预热**：写入缓存后，立即基于缓存数据进行计算，同时允许其他线程读取
 
 一些第三方库（如 `parking_lot`）早就提供了这个功能，现在标准库终于跟上了。
 
