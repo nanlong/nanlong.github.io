@@ -13,26 +13,61 @@
   gtag('config', 'G-1B5EPSJ6ZN');
 </script>
 
-<!-- 氛围极光网格与阅读进度条 -->
-<div class="ambient-backdrop" aria-hidden="true"></div>
+<!-- 硬件点阵基板与阅读进度条 -->
+<div class="sys-backdrop" aria-hidden="true"></div>
 <div id="reading-progress" aria-hidden="true"></div>
+
+{{- $quickPosts := first 5 (where site.RegularPages "Type" "in" site.Params.mainSections) }}
+
+<!-- 全站 ⌘K 浮层命令面板 -->
+<div class="cmdk-backdrop" id="cmdk-backdrop" role="dialog" aria-modal="true" aria-label="全站命令与搜索面板" aria-hidden="true">
+  <div class="cmdk-dialog">
+    <div class="cmdk-input-row">
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input id="cmdk-input" type="search" placeholder="输入关键词搜索全站文章，或选择快捷操作..." autocomplete="off" spellcheck="false">
+      <kbd>ESC</kbd>
+    </div>
+    <div class="cmdk-list" id="cmdk-list"></div>
+    <div class="cmdk-foot">
+      <span>↑↓ 选择 · ↵ 打开 · ESC 关闭</span>
+      <span id="cmdk-status">READY</span>
+    </div>
+  </div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // 1. 阅读进度条
-  const progressBar = document.getElementById("reading-progress");
-  if (progressBar) {
-    const updateProgress = () => {
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const pct = docHeight > 0 ? Math.min(100, Math.max(0, (window.scrollY / docHeight) * 100)) : 0;
-      progressBar.style.width = pct + "%";
-    };
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    updateProgress();
-  }
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const indexUrl = {{ "index.json" | absLangURL | jsonify | safeJS }};
+  const quickRoutes = [
+    { type: "action", title: "切换深色 / 工业白灰亮色主题", meta: "THEME", action: "toggle-theme" },
+    { type: "nav", title: "浏览全部专题系列", meta: "/series/", href: {{ "/series/" | absLangURL | jsonify | safeJS }} },
+    { type: "nav", title: "浏览全部文章归档", meta: "/posts/", href: {{ "/posts/" | absLangURL | jsonify | safeJS }} },
+    { type: "nav", title: "浏览全部技术标签", meta: "/tags/", href: {{ "/tags/" | absLangURL | jsonify | safeJS }} }
+  ];
+  const recentPosts = [
+    {{- range $quickPosts }}
+    { title: {{ .Title | jsonify | safeJS }}, permalink: {{ .Permalink | jsonify | safeJS }}, date: {{ .Date.Format "2006-01-02" | jsonify | safeJS }} },
+    {{- end }}
+  ];
 
-  // 2. 卡片鼠标聚光灯微光
-  document.querySelectorAll(".spotlight-card").forEach((card) => {
+  // 1. 阅读进度条 + 右侧目录百分比
+  const progressBar = document.getElementById("reading-progress");
+  const tocPctEl = document.getElementById("toc-pct");
+  const updateProgress = () => {
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docHeight > 0 ? Math.min(100, Math.max(0, (window.scrollY / docHeight) * 100)) : 0;
+    if (progressBar) progressBar.style.width = pct + "%";
+    if (tocPctEl) tocPctEl.textContent = Math.round(pct) + "%";
+  };
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  updateProgress();
+
+  // 2. 精密面板鼠标聚光灯追踪
+  document.querySelectorAll(".sys-panel").forEach((card) => {
     card.addEventListener("pointermove", (e) => {
       const rect = card.getBoundingClientRect();
       card.style.setProperty("--mouse-x", (e.clientX - rect.left) + "px");
@@ -41,7 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 3. 吸顶目录滚动高亮
-  const tocAside = document.querySelector(".article-toc-aside");
+  const tocAside = document.querySelector(".article-aside");
   if (tocAside) {
     const tocLinks = Array.from(tocAside.querySelectorAll("nav#TableOfContents a"));
     const headings = Array.from(document.querySelectorAll(".post-content h2[id], .post-content h3[id]"));
@@ -49,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const activate = () => {
         let currentId = headings[0].id;
         for (const h of headings) {
-          if (h.getBoundingClientRect().top <= 120) {
+          if (h.getBoundingClientRect().top <= 125) {
             currentId = h.id;
           } else {
             break;
@@ -57,8 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         tocLinks.forEach((a) => {
           const href = decodeURIComponent(a.getAttribute("href") || "");
-          const isMatch = href === "#" + currentId;
-          a.classList.toggle("active", isMatch);
+          a.classList.toggle("active", href === "#" + currentId);
         });
       };
       window.addEventListener("scroll", activate, { passive: true });
@@ -66,20 +100,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // 4. 代码块语言标签与表格横向滚动容器
+  // 4. 代码块语言标签 + 表格横向滚动防溢出 + 外链新标签
   document.querySelectorAll(".post-content .highlight").forEach((block) => {
     const pre = block.querySelector("pre");
     const code = block.querySelector("code");
     if (!pre) return;
     let lang = "";
-    const checkClasses = (el) => {
+    const scan = (el) => {
       if (!el) return;
-      el.className.split(/\s+/).forEach((cls) => {
-        if (cls.startsWith("language-")) lang = cls.slice(9);
+      el.className.split(/\s+/).forEach((c) => {
+        if (c.startsWith("language-")) lang = c.slice(9);
       });
     };
-    checkClasses(block);
-    if (!lang) checkClasses(code);
+    scan(block);
+    if (!lang) scan(code);
     if (lang) pre.setAttribute("data-lang", lang);
   });
 
@@ -92,7 +126,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // 5. 外链新标签打开
   document.querySelectorAll(".post-content a[href^='http']").forEach((a) => {
     try {
       if (new URL(a.href).hostname !== window.location.hostname) {
@@ -102,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (_) {}
   });
 
-  // 6. 正文图片点击灯箱放大
+  // 5. 正文图片点击灯箱放大
   const imgs = document.querySelectorAll(".post-content img");
   if (imgs.length > 0) {
     const lightbox = document.createElement("div");
@@ -110,13 +143,9 @@ document.addEventListener("DOMContentLoaded", function () {
     lightbox.innerHTML = '<img alt="">';
     const lbImg = lightbox.querySelector("img");
     document.body.appendChild(lightbox);
-
-    const close = () => lightbox.classList.remove("open");
-    lightbox.addEventListener("click", close);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
-    });
-
+    const closeLb = () => lightbox.classList.remove("open");
+    lightbox.addEventListener("click", closeLb);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLb(); });
     imgs.forEach((img) => {
       img.addEventListener("click", () => {
         lbImg.src = img.currentSrc || img.src;
@@ -126,20 +155,399 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 7. 快捷键 '/' 直达搜索页
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
-    const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
-    if (tag === "input" || tag === "textarea" || document.activeElement.isContentEditable) return;
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      e.preventDefault();
-      searchInput.focus();
-    } else {
-      e.preventDefault();
-      window.location.href = "{{ "/search/" | absLangURL }}";
+  // 6. 全站 ⌘K / '/' 浮层命令面板引擎
+  const backdrop = document.getElementById("cmdk-backdrop");
+  const input = document.getElementById("cmdk-input");
+  const listEl = document.getElementById("cmdk-list");
+  const statusEl = document.getElementById("cmdk-status");
+  const openBtn = document.getElementById("cmdk-open-btn");
+  let allIndex = null;
+  let selectedIdx = 0;
+
+  const esc = (s) => String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  async function ensureIndex() {
+    if (allIndex !== null) return allIndex;
+    statusEl.textContent = "INDEXING...";
+    try {
+      const res = await fetch(indexUrl);
+      allIndex = await res.json();
+      statusEl.textContent = allIndex.length + " DOCS";
+    } catch (_) {
+      allIndex = [];
+      statusEl.textContent = "OFFLINE";
+    }
+    return allIndex;
+  }
+
+  function renderCmdk(query) {
+    const q = (query || "").trim().toLowerCase();
+    let html = "";
+    if (!q) {
+      html += '<div class="cmdk-group-label">快捷指令</div>';
+      quickRoutes.forEach((r) => {
+        if (r.action) {
+          html += `<button type="button" class="cmdk-item" data-action="${r.action}"><span class="cmdk-item-title">${esc(r.title)}</span><span class="cmdk-item-meta">${esc(r.meta)}</span></button>`;
+        } else {
+          html += `<a class="cmdk-item" href="${esc(r.href)}"><span class="cmdk-item-title">${esc(r.title)}</span><span class="cmdk-item-meta">${esc(r.meta)}</span></a>`;
+        }
+      });
+      html += '<div class="cmdk-group-label">最新发布</div>';
+      recentPosts.forEach((p) => {
+        html += `<a class="cmdk-item" href="${esc(p.permalink)}"><span class="cmdk-item-title">${esc(p.title)}</span><span class="cmdk-item-meta">${esc(p.date)}</span></a>`;
+      });
+    } else if (allIndex) {
+      const terms = q.split(/\s+/).filter(Boolean);
+      const scored = [];
+      for (const item of allIndex) {
+        const t = (item.title || "").toLowerCase();
+        const s = (item.summary || "").toLowerCase();
+        const c = (item.content || "").toLowerCase();
+        let score = 0;
+        let ok = true;
+        for (const term of terms) {
+          if (t.includes(term)) score += 10;
+          else if (s.includes(term)) score += 4;
+          else if (c.includes(term)) score += 1;
+          else { ok = false; break; }
+        }
+        if (ok) scored.push({ item, score });
+      }
+      scored.sort((a, b) => b.score - a.score);
+      const top = scored.slice(0, 12);
+      if (top.length === 0) {
+        html = `<div class="cmdk-empty">未找到与 "${esc(query)}" 匹配的文章</div>`;
+      } else {
+        html += `<div class="cmdk-group-label">匹配结果 (${scored.length})</div>`;
+        top.forEach(({ item }) => {
+          html += `<a class="cmdk-item" href="${esc(item.permalink)}"><span class="cmdk-item-title">${esc(item.title)}</span><span class="cmdk-item-meta">POST ↗</span></a>`;
+        });
+      }
+    }
+    listEl.innerHTML = html;
+    selectedIdx = 0;
+    syncSelected();
+  }
+
+  function syncSelected() {
+    const items = listEl.querySelectorAll(".cmdk-item");
+    items.forEach((el, i) => {
+      el.classList.toggle("is-selected", i === selectedIdx);
+      if (i === selectedIdx) el.scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  function openCmdk() {
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+    input.value = "";
+    renderCmdk("");
+    ensureIndex().then(() => { if (input.value.trim()) renderCmdk(input.value); });
+    setTimeout(() => input.focus(), 20);
+  }
+
+  function closeCmdk() {
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+  }
+
+  if (openBtn) openBtn.addEventListener("click", openCmdk);
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeCmdk(); });
+  listEl.addEventListener("click", (e) => {
+    const actBtn = e.target.closest("[data-action='toggle-theme']");
+    if (actBtn) {
+      const toggle = document.getElementById("theme-toggle");
+      if (toggle) toggle.click();
+      closeCmdk();
     }
   });
+  input.addEventListener("input", () => renderCmdk(input.value));
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      backdrop.classList.contains("open") ? closeCmdk() : openCmdk();
+      return;
+    }
+    if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !backdrop.classList.contains("open")) {
+      const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
+      if (tag !== "input" && tag !== "textarea" && !document.activeElement.isContentEditable) {
+        e.preventDefault();
+        openCmdk();
+      }
+      return;
+    }
+    if (!backdrop.classList.contains("open")) return;
+    const items = listEl.querySelectorAll(".cmdk-item");
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeCmdk();
+    } else if (e.key === "ArrowDown" && items.length > 0) {
+      e.preventDefault();
+      selectedIdx = (selectedIdx + 1) % items.length;
+      syncSelected();
+    } else if (e.key === "ArrowUp" && items.length > 0) {
+      e.preventDefault();
+      selectedIdx = (selectedIdx - 1 + items.length) % items.length;
+      syncSelected();
+    } else if (e.key === "Enter" && items[selectedIdx]) {
+      e.preventDefault();
+      items[selectedIdx].click();
+    }
+  });
+
+  // 7. 首页主题即时滤波器
+  const filterBar = document.getElementById("topic-filter-bar");
+  if (filterBar) {
+    const cards = Array.from(document.querySelectorAll("#home-posts-grid .post-card"));
+    const countLabel = document.getElementById("filter-count-label");
+    filterBar.addEventListener("click", (e) => {
+      const btn = e.target.closest(".filter-pill");
+      if (!btn) return;
+      const key = btn.dataset.filter;
+      filterBar.querySelectorAll(".filter-pill").forEach((b) => b.classList.toggle("is-active", b === btn));
+      let shown = 0;
+      cards.forEach((card) => {
+        const hay = (card.dataset.topics || "").toLowerCase();
+        const hit = key === "all" || hay.includes(key);
+        card.classList.toggle("is-hidden", !hit);
+        if (hit) shown++;
+      });
+      if (countLabel) countLabel.textContent = "SHOWING " + shown + " / " + cards.length;
+    });
+  }
+
+  // 8. 首页可交互 Canvas 知识拓扑星图（基于仓库真实专题与篇数）
+  const canvas = document.getElementById("knowledge-topology");
+  const dataEl = document.getElementById("topology-data");
+  if (canvas && dataEl) {
+    const rawNodes = JSON.parse(dataEl.textContent || "[]");
+    const hudTag = document.getElementById("hud-tag");
+    const hudTitle = document.getElementById("hud-title");
+    const ctx = canvas.getContext("2d");
+    let width = 0, height = 0, dpr = 1;
+    let hovered = null;
+    let mouse = { x: -999, y: -999, active: false };
+    let nodes = [];
+    let pulses = [];
+    let tick = 0;
+
+    function layout() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = Math.max(280, rect.width);
+      height = Math.max(300, rect.height);
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const cx = width * 0.5;
+      const cy = height * 0.5;
+      const rx = Math.min(width * 0.37, 195);
+      const ry = Math.min(height * 0.35, 130);
+
+      nodes = [{
+        id: "core",
+        label: "SYS::CORE",
+        fullTitle: "全站知识网络 — 悬停查看专题，点击直达",
+        count: rawNodes.reduce((s, n) => s + n.count, 0),
+        href: {{ "/series/" | absLangURL | jsonify | safeJS }},
+        x: cx, y: cy, bx: cx, by: cy, r: 22, isCore: true, phase: 0
+      }];
+
+      rawNodes.forEach((item, i) => {
+        const ring = i % 2 === 0 ? 1.05 : 0.62;
+        const angle = (i / rawNodes.length) * Math.PI * 2 - Math.PI / 2;
+        const bx = cx + Math.cos(angle) * rx * ring;
+        const by = cy + Math.sin(angle) * ry * ring;
+        const radius = Math.max(8, Math.min(14, 6.5 + item.count * 0.65));
+        nodes.push({
+          id: "n" + i,
+          label: item.short,
+          fullTitle: item.title,
+          latest: item.latest,
+          count: item.count,
+          href: item.href,
+          x: bx, y: by, bx, by, r: radius, isCore: false, phase: i * 0.9
+        });
+      });
+
+      pulses = rawNodes.slice(0, 7).map((_, i) => ({
+        target: i + 1,
+        t: (i * 0.19) % 1,
+        speed: 0.0045 + (i % 3) * 0.0018
+      }));
+    }
+
+    function drawFrame() {
+      tick += 0.018;
+      ctx.clearRect(0, 0, width, height);
+
+      // 细微雷达同心参考圆与十字准星线
+      const cx = width * 0.5, cy = height * 0.5;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.045)";
+      ctx.lineWidth = 1;
+      [0.24, 0.42].forEach((k) => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, width * k, height * k, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      ctx.beginPath();
+      ctx.moveTo(cx - 12, cy); ctx.lineTo(cx + 12, cy);
+      ctx.moveTo(cx, cy - 12); ctx.lineTo(cx, cy + 12);
+      ctx.stroke();
+
+      // 更新轻微轨道呼吸与鼠标微引力
+      nodes.forEach((n) => {
+        if (n.isCore) return;
+        const driftX = prefersReduced ? 0 : Math.cos(tick + n.phase) * 4.5;
+        const driftY = prefersReduced ? 0 : Math.sin(tick * 0.85 + n.phase) * 3.5;
+        let tx = n.bx + driftX;
+        let ty = n.by + driftY;
+        if (mouse.active) {
+          const dx = mouse.x - tx;
+          const dy = mouse.y - ty;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 110 && dist > 1) {
+            tx += dx * 0.09;
+            ty += dy * 0.09;
+          }
+        }
+        n.x += (tx - n.x) * 0.12;
+        n.y += (ty - n.y) * 0.12;
+      });
+
+      // 检测悬停节点
+      hovered = null;
+      if (mouse.active) {
+        for (let i = nodes.length - 1; i >= 0; i--) {
+          const n = nodes[i];
+          if (Math.hypot(mouse.x - n.x, mouse.y - n.y) <= n.r + 12) {
+            hovered = n;
+            break;
+          }
+        }
+      }
+      canvas.parentElement.style.cursor = hovered ? "pointer" : "crosshair";
+
+      // 绘制连线（核心到各专题 + 邻近专题网状连线）
+      const core = nodes[0];
+      for (let i = 1; i < nodes.length; i++) {
+        const n = nodes[i];
+        const isHi = hovered && (hovered === n || hovered.isCore);
+        ctx.beginPath();
+        ctx.moveTo(core.x, core.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.strokeStyle = isHi ? "rgba(255, 85, 0, 0.65)" : "rgba(255, 255, 255, 0.11)";
+        ctx.lineWidth = isHi ? 1.5 : 1;
+        ctx.stroke();
+
+        const next = nodes[i === nodes.length - 1 ? 1 : i + 1];
+        ctx.beginPath();
+        ctx.moveTo(n.x, n.y);
+        ctx.lineTo(next.x, next.y);
+        ctx.strokeStyle = (hovered === n || hovered === next) ? "rgba(255, 85, 0, 0.35)" : "rgba(255, 255, 255, 0.05)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // 绘制脉冲数据包
+      if (!prefersReduced) {
+        pulses.forEach((p) => {
+          p.t = (p.t + p.speed) % 1;
+          const target = nodes[p.target];
+          if (!target) return;
+          const px = core.x + (target.x - core.x) * p.t;
+          const py = core.y + (target.y - core.y) * p.t;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = "#ff5500";
+          ctx.fill();
+        });
+      }
+
+      // 绘制节点与标签
+      nodes.forEach((n) => {
+        const isHi = hovered === n;
+        if (n.isCore) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r + 7, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255, 85, 0, 0.25)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fillStyle = "#ff5500";
+          ctx.fill();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "700 10px 'JetBrains Mono', monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("NL", n.x, n.y);
+        } else {
+          if (isHi) {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255, 85, 0, 0.2)";
+            ctx.fill();
+          }
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fillStyle = isHi ? "#ff5500" : "#181a22";
+          ctx.fill();
+          ctx.strokeStyle = isHi ? "#ff884d" : "rgba(255, 255, 255, 0.32)";
+          ctx.lineWidth = isHi ? 2 : 1.2;
+          ctx.stroke();
+
+          // 节点内数字（篇数）
+          ctx.fillStyle = isHi ? "#ffffff" : "#d4d4d8";
+          ctx.font = "600 9px 'JetBrains Mono', monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(n.count), n.x, n.y);
+
+          // 节点外简短中文标签
+          ctx.fillStyle = isHi ? "#ffffff" : "rgba(212, 212, 216, 0.78)";
+          ctx.font = (isHi ? "600 " : "500 ") + "11px 'PingFang SC', 'Noto Sans SC', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillText(n.label, n.x, n.y + n.r + 6);
+        }
+      });
+
+      if (hudTag && hudTitle) {
+        if (hovered && !hovered.isCore) {
+          hudTag.textContent = hovered.count + " 篇";
+          hudTitle.textContent = hovered.fullTitle + (hovered.latest ? " · " + hovered.latest : "");
+        } else {
+          hudTag.textContent = "NODES " + rawNodes.length;
+          hudTitle.textContent = "悬停任意专题节点预览，点击直接进入专栏";
+        }
+      }
+
+      if (!prefersReduced) requestAnimationFrame(drawFrame);
+    }
+
+    canvas.addEventListener("pointermove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      mouse.active = true;
+      if (prefersReduced) drawFrame();
+    });
+    canvas.addEventListener("pointerleave", () => {
+      mouse.active = false;
+      if (prefersReduced) drawFrame();
+    });
+    canvas.addEventListener("click", () => {
+      if (hovered && hovered.href) window.location.href = hovered.href;
+    });
+    window.addEventListener("resize", () => { layout(); drawFrame(); });
+    layout();
+    drawFrame();
+  }
 });
 </script>
 
@@ -152,15 +560,14 @@ document.addEventListener("DOMContentLoaded", function () {
     startOnLoad: true,
     theme,
     themeVariables: theme === 'dark' ? {
-      primaryColor: '#111827',
-      primaryTextColor: '#eef2f6',
-      primaryBorderColor: '#38bdf8',
-      lineColor: '#38bdf8',
-      secondaryColor: '#1e293b',
-      tertiaryColor: '#0f172a',
-      background: '#0b1019',
-      mainBkg: '#111827',
-      secondBkg: '#1e293b',
+      primaryColor: '#14161c',
+      primaryTextColor: '#f4f4f6',
+      primaryBorderColor: '#ff5500',
+      lineColor: '#ff5500',
+      secondaryColor: '#1c1f28',
+      tertiaryColor: '#0e0f13',
+      background: '#0b0c10',
+      mainBkg: '#14161c',
       fontFamily: 'JetBrains Mono, Inter, sans-serif',
       fontSize: '14px'
     } : {}

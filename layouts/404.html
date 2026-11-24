@@ -1,18 +1,18 @@
 {{ define "main" }}
 <div class="error-shell">
   <h1 class="error-code">404</h1>
-  <p class="hero-subtitle" style="margin-top: 14px; margin-bottom: 0;">
-    目标页面不存在或已被移动。
+  <p class="hero-lead" style="margin-top: 14px; margin-bottom: 0;">
+    目标路由不存在或已迁移。
   </p>
 
   <div class="error-terminal">
-    <div><span style="color:#38bdf8">$</span> curl -I {{ .RelPermalink }}</div>
+    <div><span style="color:#ff5500">$</span> curl -I {{ .RelPermalink }}</div>
     <span class="err-out">HTTP/2 404 Not Found</span>
   </div>
 
-  <div class="hero-cta" style="margin-bottom: 0;">
-    <a class="btn-primary" href="{{ "" | absLangURL }}">返回首页</a>
-    <a class="btn-secondary" href="{{ "/search/" | absLangURL }}">站内搜索</a>
+  <div class="hero-actions" style="margin-bottom: 0;">
+    <a class="btn-signal" href="{{ "" | absLangURL }}">返回控制室首页</a>
+    <button type="button" class="btn-outline" onclick="document.getElementById('cmdk-open-btn')?.click()">⌘K 搜索全站</button>
   </div>
 </div>
 {{ end }}

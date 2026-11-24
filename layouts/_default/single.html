@@ -1,17 +1,27 @@
 {{- define "main" }}
 {{- $hasToc := and (.Param "ShowToc") (gt (len .TableOfContents) 32) }}
+{{- $seriesName := "" }}
+{{- $seriesUrl := "" }}
+{{- $seriesPages := slice }}
+{{- with ($.GetTerms "series") }}
+  {{- $seriesTerm := index . 0 }}
+  {{- $seriesName = $seriesTerm.LinkTitle }}
+  {{- $seriesUrl = $seriesTerm.Permalink }}
+  {{- $seriesPages = $seriesTerm.Pages.Reverse }}
+{{- end }}
+{{- $hasSeries := gt (len $seriesPages) 1 }}
+{{- $hasAside := or $hasToc $hasSeries }}
 
-<div class="article-layout{{ if not $hasToc }} no-toc{{ end }}">
+<div class="article-layout{{ if not $hasAside }} no-aside{{ end }}">
   <article class="post-single">
     <header class="post-header">
       {{ partial "breadcrumbs.html" . }}
 
-      {{- with .Params.series }}
-      {{- $firstSeries := index . 0 }}
-      <a class="post-series-pill" href="{{ (printf "/series/%s/" ($firstSeries | urlize)) | absLangURL }}">
-        <span>系列</span>
-        <span>·</span>
-        <span>{{ $firstSeries }}</span>
+      {{- if $seriesName }}
+      <a class="post-series-pill" href="{{ $seriesUrl }}">
+        <span>SERIES</span>
+        <span>//</span>
+        <span>{{ $seriesName }}{{ if $hasSeries }} ({{ len $seriesPages }} 篇){{ end }}</span>
       </a>
       {{- end }}
 
@@ -27,7 +37,7 @@
         <span>·</span>
         <span>{{ .WordCount }} 字</span>
         <span>·</span>
-        <span>约 {{ .ReadingTime }} 分钟阅读</span>
+        <span>约 {{ .ReadingTime }} 分钟</span>
         {{- with .Params.author | default site.Params.author }}
         <span>·</span>
         <span>{{ . }}</span>
@@ -39,12 +49,29 @@
     {{- $isHidden := (.Param "cover.hiddenInSingle") | default (.Param "cover.hidden") | default false }}
     {{- partial "cover.html" (dict "cxt" . "IsSingle" true "isHidden" $isHidden) }}
 
-    {{- if $hasToc }}
+    {{- if $hasAside }}
     <div class="toc-inline-mobile">
+      {{- if $hasSeries }}
+      <details>
+        <summary>系列目录：{{ $seriesName }}（共 {{ len $seriesPages }} 篇）</summary>
+        <ul class="series-nav-list" style="margin-top: 10px;">
+          {{- range $i, $p := $seriesPages }}
+          <li>
+            <a href="{{ $p.Permalink }}" class="{{ if eq $p.Permalink $.Permalink }}is-current{{ end }}">
+              <span class="series-nav-idx">{{ printf "%02d" (add $i 1) }}</span>
+              <span>{{ $p.Title }}</span>
+            </a>
+          </li>
+          {{- end }}
+        </ul>
+      </details>
+      {{- end }}
+      {{- if $hasToc }}
       <details>
         <summary>文章目录</summary>
         {{ .TableOfContents }}
       </details>
+      {{- end }}
     </div>
     {{- end }}
 
@@ -61,7 +88,7 @@
       {{- with ($.GetTerms $tags) }}
       <ul class="post-tags">
         {{- range . }}
-        <li><a href="{{ .Permalink }}"># {{ .LinkTitle }}</a></li>
+        <li><a href="{{ .Permalink }}">#{{ .LinkTitle }}</a></li>
         {{- end }}
       </ul>
       {{- end }}
@@ -76,12 +103,36 @@
     {{- end }}
   </article>
 
-  {{- if $hasToc }}
-  <aside class="article-toc-aside" aria-label="文章目录">
-    <div class="toc-heading">
-      <span>On This Page</span>
+  {{- if $hasAside }}
+  <aside class="article-aside" aria-label="文章导航">
+    {{- if $hasSeries }}
+    <div class="aside-box">
+      <div class="aside-title">
+        <span>SERIES // {{ $seriesName }}</span>
+        <span class="toc-pct">{{ len $seriesPages }} 篇</span>
+      </div>
+      <ul class="series-nav-list">
+        {{- range $i, $p := $seriesPages }}
+        <li>
+          <a href="{{ $p.Permalink }}" class="{{ if eq $p.Permalink $.Permalink }}is-current{{ end }}">
+            <span class="series-nav-idx">{{ printf "%02d" (add $i 1) }}</span>
+            <span>{{ $p.Title }}</span>
+          </a>
+        </li>
+        {{- end }}
+      </ul>
     </div>
-    {{ .TableOfContents }}
+    {{- end }}
+
+    {{- if $hasToc }}
+    <div class="aside-box">
+      <div class="aside-title">
+        <span>ON THIS PAGE</span>
+        <span class="toc-pct" id="toc-pct">0%</span>
+      </div>
+      {{ .TableOfContents }}
+    </div>
+    {{- end }}
   </aside>
   {{- end }}
 </div>
