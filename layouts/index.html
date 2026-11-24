@@ -3,7 +3,6 @@
 {{- $allPosts = where $allPosts "Params.hiddenInHomeList" "!=" "true" }}
 {{- $latestPost := index $allPosts 0 }}
 {{- $seriesList := site.Taxonomies.series.ByCount }}
-{{- $tagCount := len site.Taxonomies.tags }}
 
 {{- /* 生成真实 11 个专题系列的拓扑节点 JSON（供 Canvas 拓扑引擎使用） */ -}}
 {{- $topoItems := slice }}
@@ -56,7 +55,7 @@
       </div>
     </div>
 
-    <div class="telemetry-strip" aria-label="站点内容统计">
+    <div class="telemetry-strip" aria-label="站点内容与访问统计">
       <div class="telemetry-cell">
         <span class="telemetry-label">ARTICLES</span>
         <span class="telemetry-val">{{ len $allPosts }}<em>篇</em></span>
@@ -66,8 +65,12 @@
         <span class="telemetry-val">{{ len $seriesList }}<em>栏</em></span>
       </div>
       <div class="telemetry-cell">
-        <span class="telemetry-label">TOPICS</span>
-        <span class="telemetry-val">{{ $tagCount }}<em>标</em></span>
+        <span class="telemetry-label">SITE VIEWS</span>
+        <span class="telemetry-val"><span id="vercount_value_site_pv">--</span><em>次</em></span>
+      </div>
+      <div class="telemetry-cell">
+        <span class="telemetry-label">VISITORS</span>
+        <span class="telemetry-val"><span id="vercount_value_site_uv">--</span><em>人</em></span>
       </div>
     </div>
   </div>

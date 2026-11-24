@@ -557,7 +557,7 @@ body.list {
 /* 硬件仪表数字读数条 */
 .telemetry-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-sm);
   background: var(--bg-panel);
@@ -1151,11 +1151,50 @@ body.list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
+  gap: 8px 14px;
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.meta-views-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  color: var(--text-secondary);
+}
+
+.meta-views-inner svg {
+  color: var(--signal);
+}
+
+.meta-views-inner strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.footer-telemetry {
+  max-width: var(--container-max);
+  margin: -18px auto 28px;
+  padding: 0 24px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer-telemetry strong {
+  color: var(--signal);
+  font-weight: 600;
+}
+
+.footer-telemetry .ft-sep {
+  margin: 0 8px;
+  opacity: 0.5;
 }
 
 /* 右侧吸顶护航栏（同系列目录 + 实时百分比 TOC） */
@@ -2115,6 +2154,18 @@ summary:focus-visible {
   .posts-grid,
   .paginav {
     grid-template-columns: 1fr;
+  }
+
+  .telemetry-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemetry-cell:nth-child(2n) {
+    border-right: none;
+  }
+
+  .telemetry-cell:nth-child(-n+2) {
+    border-bottom: 1px solid var(--border-hairline);
   }
 
   .filter-count {
