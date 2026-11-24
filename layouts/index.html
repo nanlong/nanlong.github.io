@@ -1,0 +1,157 @@
+{{- define "main" }}
+{{- $allPosts := where site.RegularPages "Type" "in" site.Params.mainSections }}
+{{- $allPosts = where $allPosts "Params.hiddenInHomeList" "!=" "true" }}
+{{- $latestPost := index $allPosts 0 }}
+{{- $seriesList := site.Taxonomies.series.ByCount }}
+{{- $tagCount := len site.Taxonomies.tags }}
+
+<section class="hero-section">
+  <div class="hero-copy">
+    <div class="hero-eyebrow">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      <span>RUST · SYSTEMS · ARCHITECTURE</span>
+    </div>
+    <h1 class="hero-title">
+      用实测与源码，<br>
+      <span class="gradient-text">拆解复杂工程系统</span>
+    </h1>
+    <p class="hero-subtitle">
+      这里记录 Rust 版本演进、分布式一致性、并发模型、数据库与架构设计的长期笔记。不堆概念，每一篇都尽量回到真实入口、边界与可复现验证。
+    </p>
+    <div class="hero-cta">
+      {{- with $latestPost }}
+      <a class="btn-primary" href="{{ .Permalink }}">
+        <span>阅读最新文章</span>
+        <span aria-hidden="true">→</span>
+      </a>
+      {{- end }}
+      <a class="btn-secondary" href="{{ "/series/" | absLangURL }}">
+        <span>浏览 {{ len $seriesList }} 个专题系列</span>
+      </a>
+    </div>
+    <div class="hero-metrics">
+      <div class="hero-metric">
+        <strong>{{ len $allPosts }}</strong>
+        <span>深度技术文章</span>
+      </div>
+      <div class="hero-metric">
+        <strong>{{ len $seriesList }}</strong>
+        <span>系统化专栏</span>
+      </div>
+      <div class="hero-metric">
+        <strong>{{ $tagCount }}</strong>
+        <span>技术主题标签</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-terminal" aria-label="最新更新速览">
+    <div class="terminal-bar">
+      <div class="terminal-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="terminal-title">nanlong.github.io — latest</span>
+    </div>
+    <div class="terminal-body">
+      <div class="terminal-cmd">
+        <span class="prompt">$</span>
+        <span>ls -t content/posts</span>
+        <span class="arg">--limit 5</span>
+      </div>
+      <ul class="terminal-list">
+        {{- range first 5 $allPosts }}
+        <li>
+          <a href="{{ .Permalink }}">
+            <span class="t-date">{{ .Date.Format "2006-01-02" }}</span>
+            <span class="t-title">{{ .Title }}</span>
+            <span class="t-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        {{- end }}
+      </ul>
+    </div>
+  </div>
+</section>
+
+{{- if gt (len $seriesList) 0 }}
+<section class="section-block">
+  <div class="section-head">
+    <div>
+      <span class="section-kicker">Curated Series</span>
+      <h2>深度专题系列</h2>
+    </div>
+    <a class="section-more" href="{{ "/series/" | absLangURL }}">全部 {{ len $seriesList }} 个系列 →</a>
+  </div>
+
+  <div class="series-bento">
+    {{- range $idx, $item := first 6 $seriesList }}
+    {{- $firstInSeries := index $item.Pages 0 }}
+    <a class="spotlight-card series-card" href="{{ $item.Page.Permalink }}">
+      <div>
+        <div class="series-card-top">
+          <span class="series-index">{{ printf "%02d" (add $idx 1) }}</span>
+          <span class="series-count">{{ $item.Count }} 篇</span>
+        </div>
+        <h3>{{ $item.Page.Title }}</h3>
+      </div>
+      {{- with $firstInSeries }}
+      <p class="series-latest">包含：{{ .Title }}</p>
+      {{- end }}
+    </a>
+    {{- end }}
+  </div>
+</section>
+{{- end }}
+
+<section class="section-block">
+  <div class="section-head">
+    <div>
+      <span class="section-kicker">Latest Writing</span>
+      <h2>最新文章</h2>
+    </div>
+    <a class="section-more" href="{{ "/posts/" | absLangURL }}">查看全部 {{ len $allPosts }} 篇 →</a>
+  </div>
+
+  {{- with $latestPost }}
+  <a class="spotlight-card featured-post" href="{{ .Permalink }}">
+    <div>
+      <span class="featured-badge">LATEST · {{ .Date.Format "2006-01-02" }}</span>
+      <h3>{{ .Title }}</h3>
+      <p>{{ with .Description }}{{ . | markdownify | plainify | htmlUnescape }}{{ else }}{{ .Summary | plainify | htmlUnescape }}{{ end }}</p>
+      <div class="post-card-meta">
+        <span>{{ .ReadingTime }} 分钟阅读</span>
+        <span>·</span>
+        <span>{{ .WordCount }} 字</span>
+        {{- range first 3 .Params.tags }}
+        <span class="post-card-tag">{{ . }}</span>
+        {{- end }}
+      </div>
+    </div>
+    <span class="featured-cta">开始阅读 →</span>
+  </a>
+  {{- end }}
+
+  <div class="posts-grid">
+    {{- range first 6 (after 1 $allPosts) }}
+    <a class="spotlight-card post-card" href="{{ .Permalink }}">
+      <div>
+        <div class="post-card-meta" style="margin-bottom: 10px;">
+          <span>{{ .Date.Format "2006-01-02" }}</span>
+          <span>·</span>
+          <span>{{ .ReadingTime }} min</span>
+          {{- range first 2 .Params.tags }}
+          <span class="post-card-tag">{{ . }}</span>
+          {{- end }}
+        </div>
+        <h3>{{ .Title }}</h3>
+      </div>
+      <p class="post-card-summary">{{ with .Description }}{{ . | markdownify | plainify | htmlUnescape }}{{ else }}{{ .Summary | plainify | htmlUnescape }}{{ end }}</p>
+      <div class="post-card-foot">
+        <span>{{ .WordCount }} 字</span>
+        <span class="post-card-read">阅读全文 →</span>
+      </div>
+    </a>
+    {{- end }}
+  </div>
+</section>
+{{- end }}

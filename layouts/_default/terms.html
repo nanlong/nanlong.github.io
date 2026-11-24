@@ -1,0 +1,25 @@
+{{- define "main" }}
+{{- $terms := .Data.Terms.ByCount }}
+
+<header class="page-hero">
+  {{ partial "breadcrumbs.html" . }}
+  <h1>
+    <span>{{ .Title }}</span>
+    <span class="page-hero-count">{{ len $terms }} 项</span>
+  </h1>
+  {{- if .Description }}
+  <p>{{ .Description | markdownify }}</p>
+  {{- end }}
+</header>
+
+<ul class="terms-grid">
+  {{- range $terms }}
+  <li>
+    <a class="spotlight-card term-card" href="{{ .Page.Permalink }}">
+      <span class="term-card-name">{{ .Page.Title }}</span>
+      <span class="series-count">{{ .Count }}</span>
+    </a>
+  </li>
+  {{- end }}
+</ul>
+{{- end }}

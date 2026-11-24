@@ -13,725 +13,157 @@
   gtag('config', 'G-1B5EPSJ6ZN');
 </script>
 
-<!-- Matrix Background -->
-<canvas id="matrix-bg"></canvas>
-
-<!-- Reading Progress Bar -->
-<div id="reading-progress"></div>
-
-<!-- Vignette Effect -->
-<div id="vignette"></div>
-
-<style>
-    #matrix-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        opacity: 0.08;
-    }
-
-    /* Reading Progress Bar */
-    #reading-progress {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 0%;
-        height: 3px;
-        background: linear-gradient(90deg, #00ff41, #00ff41 50%, #ffffff);
-        box-shadow:
-            0 0 10px #00ff41,
-            0 0 20px #00ff41;
-        z-index: 9999;
-        transition: width 0.1s ease-out;
-    }
-
-    /* Vignette Effect */
-    #vignette {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 9998;
-        background: radial-gradient(
-            ellipse at center,
-            transparent 60%,
-            rgba(0, 0, 0, 0.4) 100%
-        );
-    }
-
-    /* Code Editor Styles */
-    .code-editor {
-        background: #1e1e1e;
-        border-radius: 8px;
-        overflow: hidden;
-        font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
-        font-size: 13px;
-        line-height: 1.5;
-        box-shadow: 0 8px 32px rgba(0, 255, 65, 0.15);
-        border: 1px solid #333;
-        width: 100%;
-        height: 320px;
-        margin: 0 auto;
-    }
-
-    .editor-header {
-        background: #323232;
-        padding: 8px 12px;
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid #333;
-        height: 36px;
-        box-sizing: border-box;
-    }
-
-    .editor-dots {
-        display: flex;
-        gap: 6px;
-    }
-
-    .editor-dots .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-    }
-
-    .editor-dots .dot.red { background: #ff5f56; }
-    .editor-dots .dot.yellow { background: #ffbd2e; }
-    .editor-dots .dot.green { background: #27ca40; }
-
-    .editor-title {
-        color: #888;
-        font-size: 12px;
-        flex: 1;
-        text-align: center;
-    }
-
-    .editor-body {
-        display: flex;
-        height: calc(100% - 36px);
-        overflow: hidden;
-    }
-
-    .line-numbers {
-        background: #1e1e1e;
-        color: #858585;
-        text-align: right;
-        padding: 12px 8px;
-        border-right: 1px solid #333;
-        user-select: none;
-        white-space: pre;
-        min-width: 32px;
-    }
-
-    .code-area {
-        flex: 1;
-        overflow: hidden;
-    }
-
-    .code-content {
-        padding: 12px 16px;
-        white-space: pre;
-        color: #d4d4d4;
-    }
-
-    /* Syntax Highlighting - Dracula Theme */
-    .code-editor .kw { color: #ff79c6; }
-    .code-editor .ty { color: #8be9fd; }
-    .code-editor .fn { color: #50fa7b; }
-    .code-editor .mc { color: #50fa7b; }
-    .code-editor .st { color: #f1fa8c; }
-    .code-editor .at { color: #ffb86c; }
-    .code-editor .cm { color: #6272a4; }
-    .code-editor .num { color: #bd93f9; }
-
-    /* Cursor */
-    .code-editor .cursor {
-        display: inline-block;
-        width: 2px;
-        height: 1.2em;
-        background: #00ff41;
-        margin-left: 1px;
-        vertical-align: text-bottom;
-        animation: blink 1s step-end infinite;
-    }
-
-    @keyframes blink {
-        0%, 50% { opacity: 1; }
-        50.01%, 100% { opacity: 0; }
-    }
-
-    /* GitHub 导航栏图标 */
-    #menu li:has(.nav-github) {
-        display: flex;
-        align-items: center;
-    }
-
-    .nav-github {
-        display: flex;
-        align-items: center;
-        height: 100%;
-    }
-
-    .nav-github svg {
-        transition: color 0.2s ease;
-        vertical-align: middle;
-    }
-
-    .nav-github:hover svg {
-        color: #00ff41;
-    }
-</style>
+<!-- 氛围极光网格与阅读进度条 -->
+<div class="ambient-backdrop" aria-hidden="true"></div>
+<div id="reading-progress" aria-hidden="true"></div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // ========== Matrix Rain Animation ==========
-        const canvas = document.getElementById("matrix-bg");
-        const ctx = canvas.getContext("2d");
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. 阅读进度条
+  const progressBar = document.getElementById("reading-progress");
+  if (progressBar) {
+    const updateProgress = () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? Math.min(100, Math.max(0, (window.scrollY / docHeight) * 100)) : 0;
+      progressBar.style.width = pct + "%";
+    };
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    updateProgress();
+  }
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        const chars = "01";
-        const charArray = chars.split("");
-        const fontSize = 20;
-        const columns = Math.floor(canvas.width / fontSize / 3);
-
-        const drops = [];
-        for (let i = 0; i < columns; i++) {
-            drops[i] = Math.random() * -50;
-        }
-
-        function draw() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = "#00ff41";
-            ctx.font = fontSize + "px monospace";
-
-            for (let i = 0; i < drops.length; i++) {
-                const char =
-                    charArray[Math.floor(Math.random() * charArray.length)];
-                const x = i * fontSize * 3;
-                const y = drops[i] * fontSize;
-
-                if (Math.random() > 0.98) {
-                    ctx.fillStyle = "#ffffff";
-                } else {
-                    ctx.fillStyle = "#00ff41";
-                }
-
-                ctx.fillText(char, x, y);
-
-                if (y > canvas.height && Math.random() > 0.99) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-        }
-
-        setInterval(draw, 100);
-
-        window.addEventListener("resize", function () {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // ========== Reading Progress Bar ==========
-        const progressBar = document.getElementById("reading-progress");
-        if (progressBar) {
-            window.addEventListener("scroll", function () {
-                const scrollTop = window.scrollY;
-                const docHeight =
-                    document.documentElement.scrollHeight - window.innerHeight;
-                const progress = (scrollTop / docHeight) * 100;
-                progressBar.style.width = progress + "%";
-            });
-        }
-
-        // ========== TOC Current Section Highlight ==========
-        const tocLinks = document.querySelectorAll(".toc a");
-        const headings = document.querySelectorAll(
-            ".post-content h2, .post-content h3",
-        );
-
-        if (tocLinks.length > 0 && headings.length > 0) {
-            window.addEventListener("scroll", function () {
-                let current = "";
-                headings.forEach(function (heading) {
-                    const top = heading.getBoundingClientRect().top;
-                    if (top < 150) {
-                        current = heading.id;
-                    }
-                });
-
-                tocLinks.forEach(function (link) {
-                    link.classList.remove("active");
-                    if (link.getAttribute("href") === "#" + current) {
-                        link.classList.add("active");
-                    }
-                });
-            });
-        }
-
-        // ========== Code Editor Effect for Homepage ==========
-        const homeInfo = document.querySelector(".home-info .entry-content");
-        if (homeInfo) {
-            homeInfo.style.display = "none";
-            const editorContainer = document.createElement("div");
-            editorContainer.className = "code-editor";
-            homeInfo.parentNode.insertBefore(editorContainer, homeInfo);
-
-            editorContainer.innerHTML = `
-                <div class="editor-header">
-                    <div class="editor-dots">
-                        <span class="dot red"></span>
-                        <span class="dot yellow"></span>
-                        <span class="dot green"></span>
-                    </div>
-                    <div class="editor-title">main.rs — 程序员日记</div>
-                </div>
-                <div class="editor-body">
-                    <div class="line-numbers"></div>
-                    <div class="code-area">
-                        <div class="code-content"></div>
-                    </div>
-                </div>
-            `;
-
-            const lineNumbers = editorContainer.querySelector(".line-numbers");
-            const codeContent = editorContainer.querySelector(".code-content");
-            const maxVisibleLines = 13;
-
-            // 编码动作序列：模拟真实编程习惯
-            // t=type, p=pause, d=dedent(减少缩进)
-            const actions = [
-                // use 语句
-                {t: "use anyhow::{Context, Result};\n"},
-                {t: "use serde::{Deserialize, Serialize};\n"},
-                {t: "use std::collections::HashMap;\n"},
-                {t: "use tokio::time::{sleep, Duration};\n"}, {p: 100},
-                {t: "\n"},
-
-                // 常量
-                {t: "const VERSION: &str = \"0.1.0\";\n"}, {p: 80},
-                {t: "\n"},
-
-                // Post 结构体
-                {t: "/// 博客文章\n"},
-                {t: "#[derive(Debug, Clone, Serialize, Deserialize)]\n"},
-                {t: "pub struct Post {\n"},
-                {t: "id: u64,\n"},
-                {t: "title: String,\n"},
-                {t: "content: String,\n"},
-                {t: "tags: Vec<String>,\n"},
-                {t: "published: bool,\n"},
-                {d: 1}, {t: "}\n"}, {p: 100},
-                {t: "\n"},
-
-                // Blog 结构体
-                {t: "/// 程序员日记 - 技术博客系统\n"},
-                {t: "#[derive(Debug, Clone)]\n"},
-                {t: "pub struct Blog {\n"},
-                {t: "name: String,\n"},
-                {t: "author: String,\n"},
-                {t: "posts: HashMap<u64, Post>,\n"},
-                {t: "next_id: u64,\n"},
-                {d: 1}, {t: "}\n"}, {p: 100},
-                {t: "\n"},
-
-                // impl Blog
-                {t: "impl Blog {\n"},
-
-                // new 函数
-                {t: "/// 创建新的博客实例\n"},
-                {t: "pub fn new(name: &str, author: &str) -> Self {\n"},
-                {t: "Self {\n"},
-                {t: "name: name.to_string(),\n"},
-                {t: "author: author.to_string(),\n"},
-                {t: "posts: HashMap::new(),\n"},
-                {t: "next_id: 1,\n"},
-                {d: 1}, {t: "}\n"},
-                {d: 1}, {t: "}\n"}, {p: 80},
-                {t: "\n"},
-
-                // add_post 函数
-                {t: "/// 添加新文章\n"},
-                {t: "pub fn add_post(&mut self, title: &str, content: &str) -> u64 {\n"},
-                {t: "let id = self.next_id;\n"},
-                {t: "let post = Post {\n"},
-                {t: "id,\n"},
-                {t: "title: title.to_string(),\n"},
-                {t: "content: content.to_string(),\n"},
-                {t: "tags: vec![],\n"},
-                {t: "published: false,\n"},
-                {d: 1}, {t: "};\n"},
-                {t: "self.posts.insert(id, post);\n"},
-                {t: "self.next_id += 1;\n"},
-                {t: "id\n"},
-                {d: 1}, {t: "}\n"}, {p: 80},
-                {t: "\n"},
-
-                // publish 函数
-                {t: "/// 发布文章\n"},
-                {t: "pub fn publish(&mut self, id: u64) -> Result<()> {\n"},
-                {t: "let post = self.posts.get_mut(&id)\n"},
-                {t: "    .context(\"Post not found\")?;\n"},
-                {t: "post.published = true;\n"},
-                {t: "Ok(())\n"},
-                {d: 1}, {t: "}\n"}, {p: 80},
-                {t: "\n"},
-
-                // run 函数
-                {t: "/// 运行博客服务\n"},
-                {t: "pub async fn run(&self) -> Result<()> {\n"},
-                {t: 'println!("🚀 {} v{}", self.name, VERSION);\n'},
-                {t: 'println!("👤 Author: {}", self.author);\n'},
-                {t: 'println!("📝 Posts: {}", self.posts.len());\n'},
-                {t: "\n"},
-                {t: "loop {\n"},
-                {t: "self.think().await;\n"},
-                {t: "self.code().await;\n"},
-                {t: "self.write().await;\n"},
-                {t: "self.learn().await;\n"},
-                {t: "sleep(Duration::from_secs(1)).await;\n"},
-                {d: 1}, {t: "}\n"},
-                {d: 1}, {t: "}\n"}, {p: 80},
-                {t: "\n"},
-
-                // 私有方法
-                {t: "async fn think(&self) {\n"},
-                {t: 'println!("💭 Thinking...");\n'},
-                {d: 1}, {t: "}\n"},
-                {t: "\n"},
-
-                {t: "async fn code(&self) {\n"},
-                {t: 'println!("⌨️  Coding...");\n'},
-                {d: 1}, {t: "}\n"},
-                {t: "\n"},
-
-                {t: "async fn write(&self) {\n"},
-                {t: 'println!("✍️  Writing...");\n'},
-                {d: 1}, {t: "}\n"},
-                {t: "\n"},
-
-                {t: "async fn learn(&self) {\n"},
-                {t: 'println!("📚 Learning...");\n'},
-                {d: 1}, {t: "}\n"},
-
-                {d: 1}, {t: "}\n"}, {p: 120},
-                {t: "\n"},
-
-                // main 函数
-                {t: "#[tokio::main]\n"},
-                {t: "async fn main() -> Result<()> {\n"},
-                {t: 'let mut blog = Blog::new("程序员日记", "Zhangsan");\n'},
-                {t: "\n"},
-                {t: "// 添加文章\n"},
-                {t: 'let id = blog.add_post(\n'},
-                {t: '    "Rust 异步编程入门",\n'},
-                {t: '    "本文介绍 async/await 的基本用法...",\n'},
-                {t: ");\n"},
-                {t: "blog.publish(id)?;\n"},
-                {t: "\n"},
-                {t: "// 启动服务\n"},
-                {t: "blog.run().await\n"},
-                {d: 1}, {t: "}\n"}, {p: 200},
-            ];
-
-            let lines = [""];
-            let cursorLine = 0;
-            let cursorCol = 0;
-            let actionIndex = 0;
-
-            function escapeHtml(str) {
-                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
-
-            function highlightLine(line) {
-                const escaped = escapeHtml(line);
-                const trimmed = escaped.trim();
-
-                // 注释行
-                if (trimmed.startsWith("///") || trimmed.startsWith("//")) {
-                    return '<span class="cm">' + escaped + '</span>';
-                }
-
-                // 属性宏行
-                if (trimmed.startsWith("#[")) {
-                    return escaped.replace(/(#\[[^\]]+\])/, '<span class="at">$1</span>');
-                }
-
-                // 普通代码行
-                let r = escaped;
-                // 字符串
-                r = r.replace(/"([^"]*)"/g, '<span class="st">"$1"</span>');
-                // 关键字
-                r = r.replace(/\b(use|pub|struct|impl|fn|let|mut|async|await|loop|Self|self|for|in|if|else|match|return|mod|crate|super|where|trait|type|const|static|move|ref|dyn)\b/g, '<span class="kw">$1</span>');
-                // 类型
-                r = r.replace(/\b(String|Vec|Result|Option|Duration|Post|Blog|Ok|Err|Some|None)\b/g, '<span class="ty">$1</span>');
-                // 宏
-                r = r.replace(/\b(println|vec|format|panic|assert|debug|tokio)!/g, '<span class="mc">$1!</span>');
-                // 数字
-                r = r.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
-                return r;
-            }
-
-            function render() {
-                const totalLines = lines.length;
-                // 从第一行开始显示，当超出时才滚动
-                const startLine = Math.max(0, cursorLine - maxVisibleLines + 1);
-                const endLine = Math.min(totalLines, startLine + maxVisibleLines);
-                const visibleLines = lines.slice(startLine, endLine);
-
-                let lineNums = "";
-                for (let i = startLine; i < endLine; i++) {
-                    lineNums += (i + 1) + "\n";
-                }
-                lineNumbers.textContent = lineNums;
-
-                // 渲染代码，在光标位置插入光标
-                let html = "";
-                for (let i = 0; i < visibleLines.length; i++) {
-                    const actualLine = startLine + i;
-                    let lineContent = visibleLines[i];
-
-                    if (actualLine === cursorLine) {
-                        // 在光标位置插入光标
-                        const before = lineContent.substring(0, cursorCol);
-                        const after = lineContent.substring(cursorCol);
-                        html += highlightLine(before) + '<span class="cursor"></span>' + highlightLine(after);
-                    } else {
-                        html += highlightLine(lineContent);
-                    }
-                    if (i < visibleLines.length - 1) html += "\n";
-                }
-                codeContent.innerHTML = html;
-            }
-
-            function insertChar(char) {
-                if (char === "\n") {
-                    const currentLine = lines[cursorLine];
-                    const before = currentLine.substring(0, cursorCol);
-                    const after = currentLine.substring(cursorCol);
-
-                    // 计算当前行的缩进
-                    const indentMatch = before.match(/^(\s*)/);
-                    const currentIndent = indentMatch ? indentMatch[1] : "";
-
-                    // 如果行尾是 {，增加一级缩进
-                    const trimmedBefore = before.trimEnd();
-                    let newIndent = currentIndent;
-                    if (trimmedBefore.endsWith("{")) {
-                        newIndent = currentIndent + "    ";
-                    }
-
-                    lines[cursorLine] = before;
-                    lines.splice(cursorLine + 1, 0, newIndent + after);
-                    cursorLine++;
-                    cursorCol = newIndent.length;
-                } else {
-                    const currentLine = lines[cursorLine];
-                    lines[cursorLine] = currentLine.substring(0, cursorCol) + char + currentLine.substring(cursorCol);
-                    cursorCol++;
-                }
-            }
-
-            function backspace() {
-                if (cursorCol > 0) {
-                    const currentLine = lines[cursorLine];
-                    lines[cursorLine] = currentLine.substring(0, cursorCol - 1) + currentLine.substring(cursorCol);
-                    cursorCol--;
-                } else if (cursorLine > 0) {
-                    const currentLine = lines[cursorLine];
-                    const prevLine = lines[cursorLine - 1];
-                    cursorCol = prevLine.length;
-                    lines[cursorLine - 1] = prevLine + currentLine;
-                    lines.splice(cursorLine, 1);
-                    cursorLine--;
-                }
-            }
-
-            function getTypeDelay() {
-                return 25 + Math.random() * 25;
-            }
-
-            function processAction() {
-                if (actionIndex >= actions.length) {
-                    setTimeout(() => {
-                        lines = [""];
-                        cursorLine = 0;
-                        cursorCol = 0;
-                        actionIndex = 0;
-                        render();
-                        setTimeout(processAction, 800);
-                    }, 2500);
-                    return;
-                }
-
-                const action = actions[actionIndex];
-                actionIndex++;
-
-                if (action.t !== undefined) {
-                    // 打字
-                    const text = action.t;
-                    let i = 0;
-                    function typeNext() {
-                        if (i < text.length) {
-                            // 检测行首缩进（4个空格 = 1个Tab）
-                            if (text.substr(i, 4) === "    " && cursorCol % 4 === 0) {
-                                // 一次插入4个空格，模拟Tab
-                                for (let j = 0; j < 4; j++) {
-                                    insertChar(" ");
-                                }
-                                render();
-                                i += 4;
-                                setTimeout(typeNext, 60 + Math.random() * 40);
-                                return;
-                            }
-
-                            const char = text[i];
-
-                            // 偶尔打错
-                            if (Math.random() < 0.02 && /[a-z]/i.test(char)) {
-                                const wrong = String.fromCharCode(char.charCodeAt(0) + (Math.random() > 0.5 ? 1 : -1));
-                                insertChar(wrong);
-                                render();
-                                setTimeout(() => {
-                                    backspace();
-                                    render();
-                                    setTimeout(() => {
-                                        insertChar(char);
-                                        render();
-                                        i++;
-                                        setTimeout(typeNext, getTypeDelay());
-                                    }, 60);
-                                }, 100);
-                                return;
-                            }
-
-                            insertChar(char);
-                            render();
-                            i++;
-                            let delay = getTypeDelay();
-                            if (char === "\n") delay = 60 + Math.random() * 40;
-                            setTimeout(typeNext, delay);
-                        } else {
-                            setTimeout(processAction, 30);
-                        }
-                    }
-                    typeNext();
-                } else if (action.d !== undefined) {
-                    // 减少缩进（删除行首的4个空格）
-                    const currentLine = lines[cursorLine];
-                    if (currentLine.startsWith("    ")) {
-                        lines[cursorLine] = currentLine.substring(4);
-                        cursorCol = Math.max(0, cursorCol - 4);
-                    }
-                    render();
-                    setTimeout(processAction, 150 + Math.random() * 100);
-                } else if (action.p !== undefined) {
-                    // 暂停思考
-                    setTimeout(processAction, action.p + Math.random() * 100);
-                }
-            }
-
-            render();
-            setTimeout(processAction, 600);
-        }
-
-        // ========== Add Language Labels to Code Blocks ==========
-        document.querySelectorAll(".highlight").forEach(function (block) {
-            const pre = block.querySelector("pre");
-            if (pre) {
-                const classes = block.className.split(" ");
-                let lang = "";
-                classes.forEach(function (cls) {
-                    if (cls.startsWith("language-")) {
-                        lang = cls.replace("language-", "");
-                    }
-                });
-                if (!lang) {
-                    const codeEl = pre.querySelector("code");
-                    if (codeEl) {
-                        const codeClasses = codeEl.className.split(" ");
-                        codeClasses.forEach(function (cls) {
-                            if (cls.startsWith("language-")) {
-                                lang = cls.replace("language-", "");
-                            }
-                        });
-                    }
-                }
-                if (lang) {
-                    pre.setAttribute("data-lang", lang);
-                }
-            }
-        });
-
-        // ========== External Link Icons ==========
-        document.querySelectorAll(".post-content a").forEach(function (link) {
-            const href = link.getAttribute("href");
-            if (
-                href &&
-                href.startsWith("http") &&
-                !href.includes(window.location.hostname)
-            ) {
-                link.classList.add("external-link");
-                link.setAttribute("target", "_blank");
-                link.setAttribute("rel", "noopener noreferrer");
-            }
-        });
+  // 2. 卡片鼠标聚光灯微光
+  document.querySelectorAll(".spotlight-card").forEach((card) => {
+    card.addEventListener("pointermove", (e) => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty("--mouse-x", (e.clientX - rect.left) + "px");
+      card.style.setProperty("--mouse-y", (e.clientY - rect.top) + "px");
     });
+  });
+
+  // 3. 吸顶目录滚动高亮
+  const tocAside = document.querySelector(".article-toc-aside");
+  if (tocAside) {
+    const tocLinks = Array.from(tocAside.querySelectorAll("nav#TableOfContents a"));
+    const headings = Array.from(document.querySelectorAll(".post-content h2[id], .post-content h3[id]"));
+    if (tocLinks.length > 0 && headings.length > 0) {
+      const activate = () => {
+        let currentId = headings[0].id;
+        for (const h of headings) {
+          if (h.getBoundingClientRect().top <= 120) {
+            currentId = h.id;
+          } else {
+            break;
+          }
+        }
+        tocLinks.forEach((a) => {
+          const href = decodeURIComponent(a.getAttribute("href") || "");
+          const isMatch = href === "#" + currentId;
+          a.classList.toggle("active", isMatch);
+        });
+      };
+      window.addEventListener("scroll", activate, { passive: true });
+      activate();
+    }
+  }
+
+  // 4. 代码块语言标签与表格横向滚动容器
+  document.querySelectorAll(".post-content .highlight").forEach((block) => {
+    const pre = block.querySelector("pre");
+    const code = block.querySelector("code");
+    if (!pre) return;
+    let lang = "";
+    const checkClasses = (el) => {
+      if (!el) return;
+      el.className.split(/\s+/).forEach((cls) => {
+        if (cls.startsWith("language-")) lang = cls.slice(9);
+      });
+    };
+    checkClasses(block);
+    if (!lang) checkClasses(code);
+    if (lang) pre.setAttribute("data-lang", lang);
+  });
+
+  document.querySelectorAll(".post-content table").forEach((table) => {
+    if (!table.parentElement.classList.contains("table-scroll")) {
+      const wrap = document.createElement("div");
+      wrap.className = "table-scroll";
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    }
+  });
+
+  // 5. 外链新标签打开
+  document.querySelectorAll(".post-content a[href^='http']").forEach((a) => {
+    try {
+      if (new URL(a.href).hostname !== window.location.hostname) {
+        a.setAttribute("target", "_blank");
+        a.setAttribute("rel", "noopener noreferrer");
+      }
+    } catch (_) {}
+  });
+
+  // 6. 正文图片点击灯箱放大
+  const imgs = document.querySelectorAll(".post-content img");
+  if (imgs.length > 0) {
+    const lightbox = document.createElement("div");
+    lightbox.className = "img-lightbox";
+    lightbox.innerHTML = '<img alt="">';
+    const lbImg = lightbox.querySelector("img");
+    document.body.appendChild(lightbox);
+
+    const close = () => lightbox.classList.remove("open");
+    lightbox.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+
+    imgs.forEach((img) => {
+      img.addEventListener("click", () => {
+        lbImg.src = img.currentSrc || img.src;
+        lbImg.alt = img.alt || "";
+        lightbox.classList.add("open");
+      });
+    });
+  }
+
+  // 7. 快捷键 '/' 直达搜索页
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+    const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || document.activeElement.isContentEditable) return;
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+    } else {
+      e.preventDefault();
+      window.location.href = "{{ "/search/" | absLangURL }}";
+    }
+  });
+});
 </script>
 
 <!-- Mermaid Diagrams Support -->
 {{ if .Page.Store.Get "hasMermaid" }}
 <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-
-    // 检测当前主题
-    const isDark = document.body.classList.contains('dark') ||
-                   localStorage.getItem('pref-theme') === 'dark' ||
-                   (!localStorage.getItem('pref-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-    mermaid.initialize({
-        startOnLoad: true,
-        theme: isDark ? 'dark' : 'default',
-        themeVariables: isDark ? {
-            primaryColor: '#1a1a2e',
-            primaryTextColor: '#00ff41',
-            primaryBorderColor: '#00ff41',
-            lineColor: '#00ff41',
-            secondaryColor: '#16213e',
-            tertiaryColor: '#0f3460',
-            background: '#1a1a2e',
-            mainBkg: '#1a1a2e',
-            secondBkg: '#16213e',
-            border1: '#00ff41',
-            border2: '#00ff41',
-            arrowheadColor: '#00ff41',
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: '14px',
-            textColor: '#e4e4e4',
-            nodeTextColor: '#e4e4e4'
-        } : {}
-    });
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const theme = document.documentElement.dataset.theme === 'light' ? 'default' : 'dark';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme,
+    themeVariables: theme === 'dark' ? {
+      primaryColor: '#111827',
+      primaryTextColor: '#eef2f6',
+      primaryBorderColor: '#38bdf8',
+      lineColor: '#38bdf8',
+      secondaryColor: '#1e293b',
+      tertiaryColor: '#0f172a',
+      background: '#0b1019',
+      mainBkg: '#111827',
+      secondBkg: '#1e293b',
+      fontFamily: 'JetBrains Mono, Inter, sans-serif',
+      fontSize: '14px'
+    } : {}
+  });
 </script>
-<style>
-    .mermaid {
-        background: var(--code-bg);
-        padding: 1.5rem;
-        border-radius: 8px;
-        margin: 1.5rem 0;
-        overflow-x: auto;
-        text-align: center;
-    }
-    .dark .mermaid {
-        background: #1a1a2e;
-    }
-</style>
 {{ end }}

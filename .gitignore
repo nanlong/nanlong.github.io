@@ -22,3 +22,8 @@ Thumbs.db
 
 # Node (如果使用)
 node_modules/
+
+# 本地辅助脚本与多平台分发产物
+scripts/
+wechat/
+zhihu/

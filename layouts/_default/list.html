@@ -1,0 +1,53 @@
+{{- define "main" }}
+{{- $pages := union .RegularPages .Sections }}
+{{- $paginator := .Paginate $pages 16 }}
+
+<header class="page-hero">
+  {{ partial "breadcrumbs.html" . }}
+  <h1>
+    <span>{{ .Title }}</span>
+    <span class="page-hero-count">{{ len $pages }} 篇</span>
+  </h1>
+  {{- if .Description }}
+  <p>{{ .Description | markdownify }}</p>
+  {{- end }}
+</header>
+
+<div class="posts-grid">
+  {{- range $paginator.Pages }}
+  <a class="spotlight-card post-card" href="{{ .Permalink }}">
+    <div>
+      <div class="post-card-meta" style="margin-bottom: 10px;">
+        <span>{{ .Date.Format "2006-01-02" }}</span>
+        <span>·</span>
+        <span>{{ .ReadingTime }} min</span>
+        {{- range first 2 .Params.tags }}
+        <span class="post-card-tag">{{ . }}</span>
+        {{- end }}
+      </div>
+      <h3>{{ .Title }}</h3>
+    </div>
+    <p class="post-card-summary">{{ with .Description }}{{ . | markdownify | plainify | htmlUnescape }}{{ else }}{{ .Summary | plainify | htmlUnescape }}{{ end }}</p>
+    <div class="post-card-foot">
+      <span>{{ .WordCount }} 字</span>
+      <span class="post-card-read">阅读全文 →</span>
+    </div>
+  </a>
+  {{- end }}
+</div>
+
+{{- if gt $paginator.TotalPages 1 }}
+<footer class="page-footer">
+  <nav class="pagination" aria-label="分页导航">
+    {{- if $paginator.HasPrev }}
+    <a class="prev" href="{{ $paginator.Prev.URL | absURL }}">← 上一页</a>
+    {{- else }}
+    <span></span>
+    {{- end }}
+    {{- if $paginator.HasNext }}
+    <a class="next" href="{{ $paginator.Next.URL | absURL }}">下一页 →</a>
+    {{- end }}
+  </nav>
+</footer>
+{{- end }}
+{{- end }}

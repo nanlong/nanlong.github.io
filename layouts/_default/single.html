@@ -1,0 +1,88 @@
+{{- define "main" }}
+{{- $hasToc := and (.Param "ShowToc") (gt (len .TableOfContents) 32) }}
+
+<div class="article-layout{{ if not $hasToc }} no-toc{{ end }}">
+  <article class="post-single">
+    <header class="post-header">
+      {{ partial "breadcrumbs.html" . }}
+
+      {{- with .Params.series }}
+      {{- $firstSeries := index . 0 }}
+      <a class="post-series-pill" href="{{ (printf "/series/%s/" ($firstSeries | urlize)) | absLangURL }}">
+        <span>系列</span>
+        <span>·</span>
+        <span>{{ $firstSeries }}</span>
+      </a>
+      {{- end }}
+
+      <h1 class="post-title">{{ .Title }}</h1>
+
+      {{- if .Description }}
+      <div class="post-description">{{ .Description | markdownify }}</div>
+      {{- end }}
+
+      {{- if not (.Param "hideMeta") }}
+      <div class="post-meta-bar">
+        <span>{{ .Date.Format "2006-01-02" }}</span>
+        <span>·</span>
+        <span>{{ .WordCount }} 字</span>
+        <span>·</span>
+        <span>约 {{ .ReadingTime }} 分钟阅读</span>
+        {{- with .Params.author | default site.Params.author }}
+        <span>·</span>
+        <span>{{ . }}</span>
+        {{- end }}
+      </div>
+      {{- end }}
+    </header>
+
+    {{- $isHidden := (.Param "cover.hiddenInSingle") | default (.Param "cover.hidden") | default false }}
+    {{- partial "cover.html" (dict "cxt" . "IsSingle" true "isHidden" $isHidden) }}
+
+    {{- if $hasToc }}
+    <div class="toc-inline-mobile">
+      <details>
+        <summary>文章目录</summary>
+        {{ .TableOfContents }}
+      </details>
+    </div>
+    {{- end }}
+
+    {{- if .Content }}
+    <div class="post-content">
+      {{- if not (.Param "disableAnchoredHeadings") }}
+      {{- partial "anchored_headings.html" .Content -}}
+      {{- else }}{{ .Content }}{{ end }}
+    </div>
+    {{- end }}
+
+    <footer class="post-footer">
+      {{- $tags := .Language.Params.Taxonomies.tag | default "tags" }}
+      {{- with ($.GetTerms $tags) }}
+      <ul class="post-tags">
+        {{- range . }}
+        <li><a href="{{ .Permalink }}"># {{ .LinkTitle }}</a></li>
+        {{- end }}
+      </ul>
+      {{- end }}
+
+      {{- if (.Param "ShowPostNavLinks") }}
+      {{- partial "post_nav_links.html" . }}
+      {{- end }}
+    </footer>
+
+    {{- if (.Param "comments") }}
+    {{- partial "comments.html" . }}
+    {{- end }}
+  </article>
+
+  {{- if $hasToc }}
+  <aside class="article-toc-aside" aria-label="文章目录">
+    <div class="toc-heading">
+      <span>On This Page</span>
+    </div>
+    {{ .TableOfContents }}
+  </aside>
+  {{- end }}
+</div>
+{{- end }}

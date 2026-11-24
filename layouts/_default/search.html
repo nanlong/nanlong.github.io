@@ -1,0 +1,14 @@
+{{- define "main" }}
+<div class="search-shell">
+  <header class="page-hero">
+    <h1>{{ .Title }}</h1>
+    <p>按标题、摘要与正文关键词实时检索全部文章（方向键选择，回车跳转）。</p>
+  </header>
+
+  <div id="searchbox">
+    <input id="searchInput" autofocus placeholder="{{ .Params.placeholder | default "输入关键词，如 Rust、Allocator、一致性..." }}"
+      aria-label="搜索文章" type="search" autocomplete="off" maxlength="64">
+    <ul id="searchResults" aria-label="搜索结果"></ul>
+  </div>
+</div>
+{{- end }}
